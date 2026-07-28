@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.History
 import com.example.R
 import com.example.domain.model.UserRole
+import com.example.ui.components.CurrentOrderDrawer
 import com.example.ui.screens.auth.LoginScreen
 import com.example.ui.screens.billing.BillingReceiptScreen
 import com.example.ui.screens.customers.CustomerManagementScreen
@@ -377,6 +378,11 @@ fun SmartPosApp(viewModel: PosViewModel) {
                         "settings" -> SettingsScreen(viewModel = viewModel)
                         else -> DashboardScreen(viewModel = viewModel)
                     }
+
+                    CurrentOrderDrawer(
+                        viewModel = viewModel,
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
                 }
             }
         }
