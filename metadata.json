@@ -1,0 +1,6 @@
+{
+  "name": "SmartPOS",
+  "description": "SmartPOS - Production-ready Restaurant Point of Sale system with Table Management, KDS, Menu, Inventory & Analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

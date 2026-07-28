@@ -1,0 +1,476 @@
+package com.example.ui.screens.orders
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.TableBar
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.domain.model.CartItem
+import com.example.domain.model.MenuItemModel
+import com.example.domain.model.OrderType
+import com.example.ui.PosViewModel
+
+@Composable
+fun OrderRegisterScreen(viewModel: PosViewModel) {
+    val categories by viewModel.categories.collectAsState()
+    val filteredItems by viewModel.filteredMenuItems.collectAsState()
+    val selectedCatId by viewModel.selectedCategoryId.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+
+    val cart by viewModel.cart.collectAsState()
+    val orderType by viewModel.orderType.collectAsState()
+    val selectedTable by viewModel.selectedTable.collectAsState()
+    val discount by viewModel.discountAmount.collectAsState()
+    val config by viewModel.restaurantConfig.collectAsState()
+
+    var showDiscountDialog by remember { mutableStateOf(false) }
+    var itemForNotes by remember { mutableStateOf<CartItem?>(null) }
+
+    val subtotal = cart.sumOf { it.subtotal }
+    val gstTax = cart.sumOf { it.gstAmount }
+    val grandTotal = (subtotal - discount) + gstTax
+
+    Row(modifier = Modifier.fillMaxSize()) {
+        // Left Panel: Menu Items Grid (60% width)
+        Column(
+            modifier = Modifier
+                .weight(1.3f)
+                .fillMaxHeight()
+                .padding(16.dp)
+        ) {
+            // Search & Category Bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.setSearchQuery(it) },
+                    placeholder = { Text("Search dish or beverage...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                    modifier = Modifier.weight(1f).testTag("pos_search_input"),
+                    singleLine = true
+                )
+
+                if (selectedTable != null) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.TableBar, contentDescription = "Table", modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Table: ${selectedTable?.tableNumber}", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Categories Filter Chips
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                FilterChip(
+                    selected = selectedCatId == null,
+                    onClick = { viewModel.selectCategory(null) },
+                    label = { Text("All") }
+                )
+                categories.forEach { cat ->
+                    FilterChip(
+                        selected = selectedCatId == cat.id,
+                        onClick = { viewModel.selectCategory(cat.id) },
+                        label = { Text(cat.name) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Menu Items Grid
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 160.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(filteredItems) { item ->
+                    PosItemTile(
+                        item = item,
+                        currencySymbol = config.currencySymbol,
+                        onClick = { viewModel.addToCart(item) }
+                    )
+                }
+            }
+        }
+
+        // Right Panel: Active Order Ticket (40% width)
+        ElevatedCard(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .padding(top = 16.dp, end = 16.dp, bottom = 16.dp),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                // Ticket Header: Order Type Selector
+                Text(
+                    text = "Active Ticket",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OrderType.values().forEach { type ->
+                        val isSelected = orderType == type
+                        Button(
+                            onClick = { viewModel.setOrderType(type) },
+                            modifier = Modifier.weight(1f).testTag("order_type_${type.name}"),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(type.label, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Cart Items List
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(cart) { item ->
+                        CartRowItem(
+                            item = item,
+                            currencySymbol = config.currencySymbol,
+                            onAdd = { viewModel.updateCartQuantity(item, 1) },
+                            onMinus = { viewModel.updateCartQuantity(item, -1) },
+                            onNotes = { itemForNotes = item }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Summary Billing Math
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(16.dp))
+                        .padding(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Subtotal", style = MaterialTheme.typography.bodySmall)
+                        Text("${config.currencySymbol}${String.format("%.2f", subtotal)}", style = MaterialTheme.typography.bodySmall)
+                    }
+
+                    if (discount > 0) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Discount", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                            Text("-${config.currencySymbol}${String.format("%.2f", discount)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("GST Tax (5%)", style = MaterialTheme.typography.bodySmall)
+                        Text("${config.currencySymbol}${String.format("%.2f", gstTax)}", style = MaterialTheme.typography.bodySmall)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Total Amount", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(
+                            text = "${config.currencySymbol}${String.format("%.2f", grandTotal)}",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Action Buttons
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedButton(
+                        onClick = { showDiscountDialog = true },
+                        modifier = Modifier.weight(1f).testTag("apply_discount_btn")
+                    ) {
+                        Text("Discount")
+                    }
+
+                    Button(
+                        onClick = {
+                            viewModel.sendOrderToKitchen { createdOrder ->
+                                viewModel.navigateTo("kds")
+                            }
+                        },
+                        enabled = cart.isNotEmpty(),
+                        modifier = Modifier.weight(1.5f).testTag("send_to_kitchen_btn"),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Send, contentDescription = "Send")
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Send to Kitchen")
+                    }
+                }
+            }
+        }
+    }
+
+    // Special Notes Modal Dialog
+    itemForNotes?.let { cartItem ->
+        var notesText by remember { mutableStateOf(cartItem.specialNotes) }
+        AlertDialog(
+            onDismissRequest = { itemForNotes = null },
+            title = { Text("Kitchen Notes: ${cartItem.menuItem.name}") },
+            text = {
+                OutlinedTextField(
+                    value = notesText,
+                    onValueChange = { notesText = it },
+                    label = { Text("Instructions (e.g. Extra spicy, No onions)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.updateCartItemNotes(cartItem, notesText)
+                    itemForNotes = null
+                }) {
+                    Text("Save Notes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { itemForNotes = null }) { Text("Cancel") }
+            }
+        )
+    }
+
+    // Discount Dialog
+    if (showDiscountDialog) {
+        var discStr by remember { mutableStateOf(discount.toString()) }
+        AlertDialog(
+            onDismissRequest = { showDiscountDialog = false },
+            title = { Text("Apply Order Discount") },
+            text = {
+                OutlinedTextField(
+                    value = discStr,
+                    onValueChange = { discStr = it },
+                    label = { Text("Discount Amount ($)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.setDiscount(discStr.toDoubleOrNull() ?: 0.0)
+                    showDiscountDialog = false
+                }) {
+                    Text("Apply")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscountDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+}
+
+@Composable
+private fun PosItemTile(
+    item: MenuItemModel,
+    currencySymbol: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(110.dp)
+            .testTag("pos_tile_${item.name}")
+            .clickable { onClick() },
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = item.name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    maxLines = 2,
+                    modifier = Modifier.weight(1f)
+                )
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(if (item.isVeg) Color(0xFF2E7D32) else Color(0xFFC62828), CircleShape)
+                )
+            }
+
+            Text(
+                text = "$currencySymbol${String.format("%.2f", item.price)}",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+private fun CartRowItem(
+    item: CartItem,
+    currencySymbol: String,
+    onAdd: () -> Unit,
+    onMinus: () -> Unit,
+    onNotes: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = item.menuItem.name, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text(
+                    text = "$currencySymbol${String.format("%.2f", item.subtotal)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                if (item.specialNotes.isNotBlank()) {
+                    Text(
+                        text = "Note: ${item.specialNotes}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 10.sp
+                    )
+                }
+            }
+
+            IconButton(onClick = onNotes, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Default.EditNote, contentDescription = "Notes", tint = MaterialTheme.colorScheme.secondary)
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onMinus, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Remove, contentDescription = "Minus")
+                }
+                Text(
+                    text = "${item.quantity}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(horizontal = 6.dp)
+                )
+                IconButton(onClick = onAdd, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Add, contentDescription = "Add")
+                }
+            }
+        }
+    }
+}
