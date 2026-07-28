@@ -290,6 +290,11 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
         _generatedPdfFile.value = pdf
     }
 
+    fun generateAllOrdersPdf(orders: List<OrderSummary>, context: Context) {
+        val pdf = PdfInvoiceGenerator.generateAllOrdersPdf(context, orders, restaurantConfig.value)
+        _generatedPdfFile.value = pdf
+    }
+
     fun clearPrintPreview() {
         _printedReceiptText.value = null
         _generatedPdfFile.value = null

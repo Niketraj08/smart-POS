@@ -233,6 +233,15 @@ fun LoginScreen(viewModel: PosViewModel) {
                         Text("Waiter", fontSize = 11.sp)
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Crafted & Built by AstraCognix Solution",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFD4AF37)
+                )
             }
         }
     }

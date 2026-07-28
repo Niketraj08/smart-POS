@@ -362,6 +362,49 @@ object DatabaseInitializer {
                 OrderItemEntity(0, "ORD-1003", 10, "Plant-Based Beyond Burger", 15.50, 1, 5.0, "", "SERVED")
             )
 
+            val sampleOrder4 = OrderEntity(
+                id = "ORD-1004",
+                orderNumber = "ORD-1004",
+                tableNumber = "T-02",
+                orderType = "DINE_IN",
+                customerName = "David Miller",
+                customerPhone = "+1 555-7744",
+                status = "SERVED",
+                subtotal = 42.00,
+                discount = 5.00,
+                taxAmount = 1.85,
+                totalAmount = 38.85,
+                paymentMethod = "CARD",
+                paymentStatus = "PAID",
+                createdAt = System.currentTimeMillis() - 90 * 60 * 1000
+            )
+            val sampleItems4 = listOf(
+                OrderItemEntity(0, "ORD-1004", 4, "Grilled Salmon Fillet", 24.99, 1, 5.0, "Extra lemon", "SERVED"),
+                OrderItemEntity(0, "ORD-1004", 11, "Classic Molten Lava Cake", 9.99, 1, 5.0, "", "SERVED"),
+                OrderItemEntity(0, "ORD-1004", 13, "Artisanal Mango Smoothie", 7.02, 1, 5.0, "", "SERVED")
+            )
+
+            val sampleOrder5 = OrderEntity(
+                id = "ORD-1005",
+                orderNumber = "ORD-1005",
+                tableNumber = "T-04",
+                orderType = "TAKEAWAY",
+                customerName = "Ananya Sharma",
+                customerPhone = "+1 555-2233",
+                status = "CANCELLED",
+                subtotal = 22.50,
+                discount = 0.0,
+                taxAmount = 1.13,
+                totalAmount = 23.63,
+                paymentMethod = null,
+                paymentStatus = "UNPAID",
+                createdAt = System.currentTimeMillis() - 150 * 60 * 1000
+            )
+            val sampleItems5 = listOf(
+                OrderItemEntity(0, "ORD-1005", 2, "Creamy Wild Mushroom Soup", 9.50, 1, 5.0, "", "CANCELLED"),
+                OrderItemEntity(0, "ORD-1005", 7, "Artisanal Margherita Pizza", 13.00, 1, 5.0, "", "CANCELLED")
+            )
+
             db.orderDao().insertOrder(sampleOrder1)
             db.orderDao().insertOrderItems(sampleItems1)
 
@@ -370,6 +413,12 @@ object DatabaseInitializer {
 
             db.orderDao().insertOrder(sampleOrder3)
             db.orderDao().insertOrderItems(sampleItems3)
+
+            db.orderDao().insertOrder(sampleOrder4)
+            db.orderDao().insertOrderItems(sampleItems4)
+
+            db.orderDao().insertOrder(sampleOrder5)
+            db.orderDao().insertOrderItems(sampleItems5)
         }
     }
 }

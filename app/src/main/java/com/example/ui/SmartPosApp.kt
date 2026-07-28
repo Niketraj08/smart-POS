@@ -67,6 +67,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.History
 import com.example.R
 import com.example.domain.model.UserRole
 import com.example.ui.screens.auth.LoginScreen
@@ -77,6 +78,7 @@ import com.example.ui.screens.employees.EmployeeManagementScreen
 import com.example.ui.screens.inventory.InventoryScreen
 import com.example.ui.screens.kds.KitchenDisplayScreen
 import com.example.ui.screens.menu.MenuManagementScreen
+import com.example.ui.screens.orders.OrderHistoryScreen
 import com.example.ui.screens.orders.OrderRegisterScreen
 import com.example.ui.screens.qrmenu.QrMenuScreen
 import com.example.ui.screens.reports.ReportsAnalyticsScreen
@@ -102,6 +104,7 @@ fun SmartPosApp(viewModel: PosViewModel) {
     val navItems = listOf(
         NavItem("dashboard", "Dashboard", Icons.Default.Dashboard),
         NavItem("orders", "Register", Icons.Default.PointOfSale),
+        NavItem("history", "Order History", Icons.Default.History),
         NavItem("tables", "Tables", Icons.Default.TableBar),
         NavItem("kds", "KDS", Icons.Default.Kitchen),
         NavItem("billing", "Billing", Icons.Default.Receipt),
@@ -268,6 +271,7 @@ fun SmartPosApp(viewModel: PosViewModel) {
                     val bottomNavItems = listOf(
                         NavItem("dashboard", "Dashboard", Icons.Default.Dashboard),
                         NavItem("orders", "Orders", Icons.Default.PointOfSale),
+                        NavItem("history", "History", Icons.Default.History),
                         NavItem("menu", "Menu", Icons.Default.MenuBook),
                         NavItem("settings", "Settings", Icons.Default.Settings)
                     )
@@ -360,6 +364,7 @@ fun SmartPosApp(viewModel: PosViewModel) {
                     when (currentScreen) {
                         "dashboard" -> DashboardScreen(viewModel = viewModel)
                         "orders" -> OrderRegisterScreen(viewModel = viewModel)
+                        "history" -> OrderHistoryScreen(viewModel = viewModel)
                         "tables" -> TableManagementScreen(viewModel = viewModel)
                         "kds" -> KitchenDisplayScreen(viewModel = viewModel)
                         "billing" -> BillingReceiptScreen(viewModel = viewModel)
