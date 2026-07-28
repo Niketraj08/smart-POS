@@ -2,6 +2,7 @@ package com.example.ui.screens.dashboard
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -325,22 +326,35 @@ private fun HeroBannerCard(
                                 modifier = Modifier
                                     .size(32.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFFFB300)),
+                                    .border(1.5.dp, Color(0xFFD4AF37), CircleShape)
+                                    .background(Color.Black),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Image(
-                                    painter = painterResource(id = R.drawable.img_restaurant_logo),
-                                    contentDescription = "Logo Badge",
+                                    painter = painterResource(id = R.drawable.img_swad_sutra_logo),
+                                    contentDescription = "Swad Sutra Logo",
                                     modifier = Modifier.fillMaxSize().clip(CircleShape),
                                     contentScale = ContentScale.Crop
                                 )
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Gourmet POS Suite",
-                                color = Color(0xFFFFD54F),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
+                                text = "Swad ",
+                                color = Color(0xFFD4AF37),
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = "Sutra",
+                                color = Color(0xFFC62828),
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 13.sp
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "• Luxury POS",
+                                color = Color.LightGray,
+                                fontSize = 11.sp
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
@@ -382,24 +396,37 @@ private fun HeroBannerCard(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(38.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFFFB300)),
+                                    .border(2.dp, Color(0xFFD4AF37), CircleShape)
+                                    .background(Color.Black),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Image(
-                                    painter = painterResource(id = R.drawable.img_restaurant_logo),
-                                    contentDescription = "Logo Badge",
+                                    painter = painterResource(id = R.drawable.img_swad_sutra_logo),
+                                    contentDescription = "Swad Sutra Logo",
                                     modifier = Modifier.fillMaxSize().clip(CircleShape),
                                     contentScale = ContentScale.Crop
                                 )
                             }
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Gourmet POS Suite",
-                                color = Color(0xFFFFD54F),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp
+                                text = "Swad ",
+                                color = Color(0xFFD4AF37),
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 16.sp
+                            )
+                            Text(
+                                text = "Sutra",
+                                color = Color(0xFFC62828),
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 16.sp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "• Luxury POS Suite",
+                                color = Color.LightGray,
+                                fontSize = 12.sp
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))

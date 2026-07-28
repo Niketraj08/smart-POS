@@ -127,21 +127,19 @@ fun SmartPosApp(viewModel: PosViewModel) {
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(if (isCompact) 34.dp else 42.dp)
+                                    .size(if (isCompact) 36.dp else 44.dp)
                                     .clip(CircleShape)
                                     .border(
                                         width = 2.dp,
-                                        brush = Brush.linearGradient(
-                                            listOf(Color(0xFFFFB300), Color(0xFFFF6D00))
-                                        ),
+                                        color = Color(0xFFD4AF37),
                                         shape = CircleShape
                                     )
                                     .background(Color.Black),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Image(
-                                    painter = painterResource(id = R.drawable.img_restaurant_logo),
-                                    contentDescription = "Restaurant Logo",
+                                    painter = painterResource(id = R.drawable.img_swad_sutra_logo),
+                                    contentDescription = "Swad Sutra Logo",
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .clip(CircleShape),
@@ -152,13 +150,20 @@ fun SmartPosApp(viewModel: PosViewModel) {
                             Spacer(modifier = Modifier.width(if (isCompact) 8.dp else 12.dp))
 
                             Column {
-                                Text(
-                                    text = config.restaurantName,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = if (isCompact) 14.sp else 17.sp,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Swad ",
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = if (isCompact) 15.sp else 18.sp,
+                                        color = Color(0xFFD4AF37) // Luxury Gold
+                                    )
+                                    Text(
+                                        text = "Sutra",
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = if (isCompact) 15.sp else 18.sp,
+                                        color = Color(0xFFC62828) // Luxury Crimson
+                                    )
+                                }
                                 if (!isCompact) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Box(
@@ -169,7 +174,7 @@ fun SmartPosApp(viewModel: PosViewModel) {
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            text = "SmartPOS • Live POS & ML Scanner",
+                                            text = "Swad Sutra • Fine Dining & Live POS",
                                             style = MaterialTheme.typography.bodySmall,
                                             fontSize = 11.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant

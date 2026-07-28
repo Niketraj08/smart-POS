@@ -52,7 +52,7 @@ object ThermalPrinterSimulator {
 
         sb.appendLine()
         sb.appendLine(centerText("*** THANK YOU FOR VISITING ***", width))
-        sb.appendLine(centerText("POWERED BY SMARTPOS", width))
+        sb.appendLine(centerText("POWERED BY SWAD SUTRA POS", width))
         sb.appendLine("\n\n\n")
 
         return sb.toString()

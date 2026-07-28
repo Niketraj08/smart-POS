@@ -289,7 +289,7 @@ object DatabaseInitializer {
             db.configDao().saveConfig(
                 ConfigEntity(
                     id = 1,
-                    restaurantName = "SmartPOS Bistro & Bar",
+                    restaurantName = "Swad Sutra Fine Dining",
                     address = "123 Gourmet Street, Foodville, NY 10001",
                     phone = "+1 (555) 019-2831",
                     gstin = "27AABCU9603R1ZM",

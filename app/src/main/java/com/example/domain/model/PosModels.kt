@@ -134,7 +134,7 @@ data class InventoryModel(
 )
 
 data class RestaurantConfig(
-    val restaurantName: String = "SmartPOS Bistro & Bar",
+    val restaurantName: String = "Swad Sutra Fine Dining",
     val address: String = "123 Gourmet Street, Foodville, NY 10001",
     val phone: String = "+1 (555) 019-2831",
     val gstin: String = "27AABCU9603R1ZM",

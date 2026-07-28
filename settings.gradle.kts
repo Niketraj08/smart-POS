@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "SmartPOS"
+rootProject.name = "Swad Sutra"
 
 include(":app")
