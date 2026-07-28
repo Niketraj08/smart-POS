@@ -1,20 +1,15 @@
 package com.example.ui.screens.qrmenu
 
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,14 +21,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.TableBar
-import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -41,7 +31,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
@@ -57,13 +46,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import com.example.R
 import com.example.domain.util.QrCodeGenerator
 import com.example.ui.PosViewModel
@@ -71,7 +60,6 @@ import com.example.ui.components.CameraQrScanner
 
 @Composable
 fun QrMenuScreen(viewModel: PosViewModel) {
-    val context = LocalContext.current
     val tables by viewModel.tables.collectAsState()
     val config by viewModel.restaurantConfig.collectAsState()
 
@@ -94,372 +82,387 @@ fun QrMenuScreen(viewModel: PosViewModel) {
         QrCodeGenerator.generateQrBitmap(activeQrPayload, size = 450)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Top Header Title Box
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isCompact = maxWidth < 750.dp
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(if (isCompact) 12.dp else 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column {
-                Text(
-                    text = "QR Code Hub & ML Kit Camera Scanner",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Generate real ISO standard table QR codes & scan with CameraX + ML Kit",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            // Header Title Box
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.QrCodeScanner,
-                        contentDescription = "ML Kit",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "ML Kit Engine Active",
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
-                    )
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Left Column: Real QR Standee Generator
-            ElevatedCard(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Real QR Standee Generator",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // QR Type selector tabs
-                    ScrollableTabRow(
-                        selectedTabIndex = selectedQrTypeIndex,
-                        edgePadding = 0.dp,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        listOf("Table Dine-In", "Wi-Fi Access", "Loyalty Card", "Payment QR").forEachIndexed { index, title ->
-                            Tab(
-                                selected = selectedQrTypeIndex == index,
-                                onClick = { selectedQrTypeIndex = index },
-                                text = { Text(title, fontWeight = FontWeight.SemiBold, fontSize = 12.sp) }
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    if (selectedQrTypeIndex == 0 && tables.isNotEmpty()) {
-                        Text(
-                            text = "Select Table Standee:",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        ScrollableTabRow(
-                            selectedTabIndex = selectedTableIndex,
-                            edgePadding = 0.dp,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            tables.forEachIndexed { index, table ->
-                                Tab(
-                                    selected = selectedTableIndex == index,
-                                    onClick = { selectedTableIndex = index },
-                                    text = { Text(table.tableNumber) }
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Printable Standee Card View
-                    Card(
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.85f)
-                            .border(1.dp, Color.LightGray, RoundedCornerShape(20.dp))
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            // Restaurant Brand Header
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.Black),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.img_restaurant_logo),
-                                        contentDescription = "Logo",
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = config.restaurantName,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 15.sp,
-                                    color = Color.Black
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Text(
-                                text = when (selectedQrTypeIndex) {
-                                    0 -> "Scan to View Menu & Order"
-                                    1 -> "Scan for Instant Wi-Fi Access"
-                                    2 -> "Scan Member Pass for Points"
-                                    else -> "Scan to Pay Bill via UPI"
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.DarkGray
-                            )
-
-                            if (selectedQrTypeIndex == 0) {
-                                Text(
-                                    text = "Table ${currentTable?.tableNumber ?: "T-01"}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            Image(
-                                bitmap = realQrBitmap.asImageBitmap(),
-                                contentDescription = "ISO QR Code",
-                                modifier = Modifier.size(210.dp)
-                            )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Text(
-                                text = activeQrPayload,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 9.sp,
-                                color = Color.Gray
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Button(
-                            onClick = {
-                                manualQrInput = activeQrPayload
-                                scanFeedbackMessage = "QR payload copied to scanner simulator"
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                        ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Copy Payload", fontSize = 12.sp)
-                        }
-
-                        Button(
-                            onClick = {
-                                scanFeedbackMessage = "Standee sent to thermal printer!"
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Print Standee", fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-
-            // Right Column: CameraX & ML Kit Live Camera Scanner
-            ElevatedCard(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(20.dp)
-                ) {
-                    Text(
-                        text = "CameraX ML Kit Live Viewfinder",
-                        style = MaterialTheme.typography.titleMedium,
+                        text = "QR Code Hub & ML Kit Camera Scanner",
+                        style = if (isCompact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Point camera at any table standee or phone QR code to decode",
+                        text = "Generate real ISO standard table QR codes & scan with CameraX + ML Kit",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-                    // Live Camera Scanner Composable
-                    Box(
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.QrCodeScanner,
+                            contentDescription = "ML Kit",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "ML Kit Active",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+            }
+
+            @Composable
+            fun GeneratorContent() {
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(260.dp)
-                            .clip(RoundedCornerShape(20.dp))
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        CameraQrScanner(
-                            onQrCodeScanned = { qrText ->
-                                manualQrInput = qrText
-                                scanFeedbackMessage = "QR Scanned by ML Kit: $qrText"
+                        Text(
+                            text = "Real QR Standee Generator",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
 
-                                if (qrText.contains("T-")) {
-                                    val matchedTable = tables.find { qrText.contains(it.tableNumber) }
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        ScrollableTabRow(
+                            selectedTabIndex = selectedQrTypeIndex,
+                            edgePadding = 0.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            listOf("Table Dine-In", "Wi-Fi Access", "Loyalty Card", "Payment QR").forEachIndexed { index, title ->
+                                Tab(
+                                    selected = selectedQrTypeIndex == index,
+                                    onClick = { selectedQrTypeIndex = index },
+                                    text = { Text(title, fontWeight = FontWeight.SemiBold, fontSize = 12.sp) }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        if (selectedQrTypeIndex == 0 && tables.isNotEmpty()) {
+                            Text(
+                                text = "Select Table Standee:",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            ScrollableTabRow(
+                                selectedTabIndex = selectedTableIndex,
+                                edgePadding = 0.dp,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                tables.forEachIndexed { index, table ->
+                                    Tab(
+                                        selected = selectedTableIndex == index,
+                                        onClick = { selectedTableIndex = index },
+                                        text = { Text(table.tableNumber) }
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Printable Standee Card View
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                            modifier = Modifier
+                                .fillMaxWidth(if (isCompact) 0.95f else 0.85f)
+                                .border(1.dp, Color.LightGray, RoundedCornerShape(20.dp))
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.Black),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.img_restaurant_logo),
+                                            contentDescription = "Logo",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = config.restaurantName,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 14.sp,
+                                        color = Color.Black
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                Text(
+                                    text = when (selectedQrTypeIndex) {
+                                        0 -> "Scan to View Menu & Order"
+                                        1 -> "Scan for Instant Wi-Fi Access"
+                                        2 -> "Scan Member Pass for Points"
+                                        else -> "Scan to Pay Bill via UPI"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.DarkGray,
+                                    fontSize = 11.sp
+                                )
+
+                                if (selectedQrTypeIndex == 0) {
+                                    Text(
+                                        text = "Table ${currentTable?.tableNumber ?: "T-01"}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Image(
+                                    bitmap = realQrBitmap.asImageBitmap(),
+                                    contentDescription = "ISO QR Code",
+                                    modifier = Modifier.size(if (isCompact) 180.dp else 220.dp)
+                                )
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Text(
+                                    text = activeQrPayload,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontSize = 9.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    manualQrInput = activeQrPayload
+                                    scanFeedbackMessage = "QR payload copied to scanner input"
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                            ) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Copy Payload", fontSize = 12.sp)
+                            }
+
+                            Button(
+                                onClick = {
+                                    scanFeedbackMessage = "Standee sent to thermal printer!"
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Print Standee", fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Composable
+            fun ScannerContent() {
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = "CameraX ML Kit Live Viewfinder",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Point camera at any table standee or phone QR code to decode",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(if (isCompact) 220.dp else 260.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                        ) {
+                            CameraQrScanner(
+                                onQrCodeScanned = { qrText ->
+                                    manualQrInput = qrText
+                                    scanFeedbackMessage = "QR Scanned by ML Kit: $qrText"
+
+                                    if (qrText.contains("T-")) {
+                                        val matchedTable = tables.find { qrText.contains(it.tableNumber) }
+                                        if (matchedTable != null) {
+                                            scannedTableNumber = matchedTable.tableNumber
+                                            viewModel.selectTable(matchedTable)
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        OutlinedTextField(
+                            value = manualQrInput,
+                            onValueChange = { manualQrInput = it },
+                            label = { Text("Scanned QR Code String") },
+                            placeholder = { Text("e.g. TABLE:T-02") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("qr_scan_input")
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Button(
+                            onClick = {
+                                if (manualQrInput.isNotBlank()) {
+                                    scanFeedbackMessage = "Processing QR: $manualQrInput"
+                                    val matchedTable = tables.find { manualQrInput.contains(it.tableNumber) }
                                     if (matchedTable != null) {
                                         scannedTableNumber = matchedTable.tableNumber
                                         viewModel.selectTable(matchedTable)
+                                        viewModel.navigateTo("orders")
+                                    } else {
+                                        scanFeedbackMessage = "Scanned payload verified: $manualQrInput"
                                     }
                                 }
                             },
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Manual Input / Simulated Entry Fallback
-                    OutlinedTextField(
-                        value = manualQrInput,
-                        onValueChange = { manualQrInput = it },
-                        label = { Text("Scanned QR Code Raw String") },
-                        placeholder = { Text("e.g. TABLE:T-02 or https://smartpos.menu/dine-in?table=T-02") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("qr_scan_input")
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Button(
-                        onClick = {
-                            if (manualQrInput.isNotBlank()) {
-                                scanFeedbackMessage = "Processing QR: $manualQrInput"
-                                val matchedTable = tables.find { manualQrInput.contains(it.tableNumber) }
-                                if (matchedTable != null) {
-                                    scannedTableNumber = matchedTable.tableNumber
-                                    viewModel.selectTable(matchedTable)
-                                    viewModel.navigateTo("orders")
-                                } else {
-                                    scanFeedbackMessage = "Scanned payload verified: $manualQrInput"
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("qr_process_btn")
-                    ) {
-                        Text("Open Dine-In Register for Scanned Table")
-                    }
-
-                    scannedTableNumber?.let { tNum ->
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("qr_process_btn")
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(14.dp)
-                                    .fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            Text("Open Register for Scanned Table")
+                        }
+
+                        scannedTableNumber?.let { tNum ->
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column {
-                                    Text(
-                                        text = "Table $tNum Auto-Selected!",
-                                        fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                    Text(
-                                        text = "Ready to take order in Register module",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                    )
-                                }
-
-                                Button(
-                                    onClick = { viewModel.navigateTo("orders") },
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                Row(
+                                    modifier = Modifier
+                                        .padding(12.dp)
+                                        .fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Go to Order Register")
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Table $tNum Selected!",
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                        Text(
+                                            text = "Ready in Register module",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                        )
+                                    }
+
+                                    Button(
+                                        onClick = { viewModel.navigateTo("orders") },
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                    ) {
+                                        Text("Go to Register", fontSize = 12.sp)
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    scanFeedbackMessage?.let { feedback ->
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = feedback,
-                                modifier = Modifier.padding(12.dp),
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                        scanFeedbackMessage?.let { feedback ->
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = feedback,
+                                    modifier = Modifier.padding(12.dp),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
+                }
+            }
+
+            if (isCompact) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    GeneratorContent()
+                    ScannerContent()
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(modifier = Modifier.weight(1f)) { GeneratorContent() }
+                    Box(modifier = Modifier.weight(1f)) { ScannerContent() }
                 }
             }
         }
