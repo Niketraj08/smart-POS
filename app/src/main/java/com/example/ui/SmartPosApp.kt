@@ -111,204 +111,252 @@ fun SmartPosApp(viewModel: PosViewModel) {
         NavItem("settings", "Settings", Icons.Default.Settings)
     )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    ) {
-                        // Custom Generated Restaurant Brand Logo Badge
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .border(
-                                    width = 2.dp,
-                                    brush = Brush.linearGradient(
-                                        listOf(Color(0xFFFFB300), Color(0xFFFF6D00))
-                                    ),
-                                    shape = CircleShape
-                                )
-                                .background(Color.Black),
-                            contentAlignment = Alignment.Center
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isCompact = maxWidth < 720.dp
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 2.dp)
                         ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.img_restaurant_logo),
-                                contentDescription = "Restaurant Logo",
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column {
-                            Text(
-                                text = config.restaurantName,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
+                                    .size(if (isCompact) 34.dp else 42.dp)
+                                    .clip(CircleShape)
+                                    .border(
+                                        width = 2.dp,
+                                        brush = Brush.linearGradient(
+                                            listOf(Color(0xFFFFB300), Color(0xFFFF6D00))
+                                        ),
+                                        shape = CircleShape
+                                    )
+                                    .background(Color.Black),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.img_restaurant_logo),
+                                    contentDescription = "Restaurant Logo",
                                     modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFF00E676))
+                                        .fillMaxSize()
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
+                            }
+
+                            Spacer(modifier = Modifier.width(if (isCompact) 8.dp else 12.dp))
+
+                            Column {
                                 Text(
-                                    text = "SmartPOS • Live POS & ML Scanner",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = config.restaurantName,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = if (isCompact) 14.sp else 17.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1
                                 )
-                            }
-                        }
-                    }
-                },
-                actions = {
-                    // Quick ML Scanner Trigger Button
-                    IconButton(
-                        onClick = { viewModel.navigateTo("qrmenu") },
-                        modifier = Modifier
-                            .testTag("topbar_qr_scanner_btn")
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan QR Code",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    // Role Switcher Dropdown Chip
-                    Box {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(MaterialTheme.colorScheme.primaryContainer)
-                                .border(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                    RoundedCornerShape(20.dp)
-                                )
-                                .clickable { showRoleDropdown = true }
-                                .padding(horizontal = 14.dp, vertical = 7.dp)
-                                .testTag("role_switcher_chip"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "Role: ${currentUser?.role?.displayName}",
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                fontSize = 12.sp
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = showRoleDropdown,
-                            onDismissRequest = { showRoleDropdown = false }
-                        ) {
-                            UserRole.values().forEach { role ->
-                                DropdownMenuItem(
-                                    text = { Text(role.displayName, fontWeight = FontWeight.Medium) },
-                                    onClick = {
-                                        viewModel.switchRole(role)
-                                        showRoleDropdown = false
+                                if (!isCompact) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .clip(CircleShape)
+                                                .background(Color(0xFF00E676))
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "SmartPOS • Live POS & ML Scanner",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
-                                )
+                                }
                             }
                         }
-                    }
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    IconButton(
-                        onClick = { viewModel.logout() },
-                        modifier = Modifier.testTag("logout_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = "Logout",
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
-    ) { innerPadding ->
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            // Side Navigation Rail
-            NavigationRail(
-                modifier = Modifier.fillMaxHeight(),
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ) {
-                navItems.forEach { item ->
-                    val isSelected = currentScreen == item.id
-                    NavigationRailItem(
-                        selected = isSelected,
-                        onClick = { viewModel.navigateTo(item.id) },
-                        icon = {
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { viewModel.navigateTo("qrmenu") },
+                            modifier = Modifier
+                                .testTag("topbar_qr_scanner_btn")
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .size(if (isCompact) 36.dp else 40.dp)
+                        ) {
                             Icon(
-                                imageVector = item.icon,
-                                contentDescription = item.label,
-                                modifier = Modifier.size(22.dp)
+                                imageVector = Icons.Default.QrCodeScanner,
+                                contentDescription = "Scan QR Code",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(if (isCompact) 18.dp else 22.dp)
                             )
-                        },
-                        label = {
-                            Text(
-                                text = item.label,
-                                fontSize = 10.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        }
+
+                        Spacer(modifier = Modifier.width(if (isCompact) 4.dp else 10.dp))
+
+                        Box {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                                    .border(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                        RoundedCornerShape(20.dp)
+                                    )
+                                    .clickable { showRoleDropdown = true }
+                                    .padding(horizontal = if (isCompact) 8.dp else 14.dp, vertical = if (isCompact) 5.dp else 7.dp)
+                                    .testTag("role_switcher_chip"),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (isCompact) "${currentUser?.role?.displayName}" else "Role: ${currentUser?.role?.displayName}",
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontSize = if (isCompact) 11.sp else 12.sp
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = showRoleDropdown,
+                                onDismissRequest = { showRoleDropdown = false }
+                            ) {
+                                UserRole.values().forEach { role ->
+                                    DropdownMenuItem(
+                                        text = { Text(role.displayName, fontWeight = FontWeight.Medium) },
+                                        onClick = {
+                                            viewModel.switchRole(role)
+                                            showRoleDropdown = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(if (isCompact) 4.dp else 10.dp))
+
+                        IconButton(
+                            onClick = { viewModel.logout() },
+                            modifier = Modifier
+                                .testTag("logout_button")
+                                .size(if (isCompact) 36.dp else 40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Logout,
+                                contentDescription = "Logout",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(if (isCompact) 18.dp else 22.dp)
                             )
-                        },
-                        colors = NavigationRailItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
-                        ),
-                        modifier = Modifier.testTag("nav_rail_${item.id}")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
                     )
+                )
+            },
+            bottomBar = {
+                if (isCompact) {
+                    androidx.compose.material3.ScrollableTabRow(
+                        selectedTabIndex = navItems.indexOfFirst { it.id == currentScreen }.coerceAtLeast(0),
+                        edgePadding = 8.dp,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        navItems.forEach { item ->
+                            val isSelected = currentScreen == item.id
+                            androidx.compose.material3.Tab(
+                                selected = isSelected,
+                                onClick = { viewModel.navigateTo(item.id) },
+                                modifier = Modifier.testTag("nav_bottom_${item.id}"),
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = item.icon,
+                                            contentDescription = item.label,
+                                            modifier = Modifier.size(18.dp),
+                                            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = item.label,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
-
-            // Screen Content Viewport
-            Box(
+        ) { innerPadding ->
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(MaterialTheme.colorScheme.background)
+                    .fillMaxSize()
+                    .padding(innerPadding)
             ) {
-                when (currentScreen) {
-                    "dashboard" -> DashboardScreen(viewModel = viewModel)
-                    "orders" -> OrderRegisterScreen(viewModel = viewModel)
-                    "tables" -> TableManagementScreen(viewModel = viewModel)
-                    "kds" -> KitchenDisplayScreen(viewModel = viewModel)
-                    "billing" -> BillingReceiptScreen(viewModel = viewModel)
-                    "menu" -> MenuManagementScreen(viewModel = viewModel)
-                    "qrmenu" -> QrMenuScreen(viewModel = viewModel)
-                    "inventory" -> InventoryScreen(viewModel = viewModel)
-                    "customers" -> CustomerManagementScreen(viewModel = viewModel)
-                    "employees" -> EmployeeManagementScreen(viewModel = viewModel)
-                    "reports" -> ReportsAnalyticsScreen(viewModel = viewModel)
-                    "settings" -> SettingsScreen(viewModel = viewModel)
-                    else -> DashboardScreen(viewModel = viewModel)
+                if (!isCompact) {
+                    NavigationRail(
+                        modifier = Modifier.fillMaxHeight(),
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        navItems.forEach { item ->
+                            val isSelected = currentScreen == item.id
+                            NavigationRailItem(
+                                selected = isSelected,
+                                onClick = { viewModel.navigateTo(item.id) },
+                                icon = {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = item.label,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                },
+                                label = {
+                                    Text(
+                                        text = item.label,
+                                        fontSize = 10.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                colors = NavigationRailItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                                ),
+                                modifier = Modifier.testTag("nav_rail_${item.id}")
+                            )
+                        }
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.background)
+                ) {
+                    when (currentScreen) {
+                        "dashboard" -> DashboardScreen(viewModel = viewModel)
+                        "orders" -> OrderRegisterScreen(viewModel = viewModel)
+                        "tables" -> TableManagementScreen(viewModel = viewModel)
+                        "kds" -> KitchenDisplayScreen(viewModel = viewModel)
+                        "billing" -> BillingReceiptScreen(viewModel = viewModel)
+                        "menu" -> MenuManagementScreen(viewModel = viewModel)
+                        "qrmenu" -> QrMenuScreen(viewModel = viewModel)
+                        "inventory" -> InventoryScreen(viewModel = viewModel)
+                        "customers" -> CustomerManagementScreen(viewModel = viewModel)
+                        "employees" -> EmployeeManagementScreen(viewModel = viewModel)
+                        "reports" -> ReportsAnalyticsScreen(viewModel = viewModel)
+                        "settings" -> SettingsScreen(viewModel = viewModel)
+                        else -> DashboardScreen(viewModel = viewModel)
+                    }
                 }
             }
         }

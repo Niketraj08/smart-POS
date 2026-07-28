@@ -69,29 +69,59 @@ fun TableManagementScreen(viewModel: PosViewModel) {
                 .padding(16.dp)
         ) {
             // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Table Floor Plan",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Manage table seating, reservations & active orders",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val isCompact = maxWidth < 600.dp
+                if (isCompact) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column {
+                            Text(
+                                text = "Table Floor Plan",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Manage seating & reservations",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatusLegendBadge("Available", Color(0xFF2E7D32))
-                    StatusLegendBadge("Occupied", Color(0xFFC62828))
-                    StatusLegendBadge("Reserved", Color(0xFFF57F17))
-                    StatusLegendBadge("Billed", Color(0xFF1565C0))
+                        androidx.compose.foundation.lazy.LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            item { StatusLegendBadge("Available", Color(0xFF2E7D32)) }
+                            item { StatusLegendBadge("Occupied", Color(0xFFC62828)) }
+                            item { StatusLegendBadge("Reserved", Color(0xFFF57F17)) }
+                            item { StatusLegendBadge("Billed", Color(0xFF1565C0)) }
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Table Floor Plan",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Manage table seating, reservations & active orders",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            StatusLegendBadge("Available", Color(0xFF2E7D32))
+                            StatusLegendBadge("Occupied", Color(0xFFC62828))
+                            StatusLegendBadge("Reserved", Color(0xFFF57F17))
+                            StatusLegendBadge("Billed", Color(0xFF1565C0))
+                        }
+                    }
                 }
             }
 

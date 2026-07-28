@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -66,182 +67,399 @@ fun BillingReceiptScreen(viewModel: PosViewModel) {
     var selectedPaymentMethod by remember { mutableStateOf(PaymentMethod.CASH) }
     var showPrintModal by remember { mutableStateOf(false) }
 
-    Row(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        // Left Column: Unpaid Orders List
-        ElevatedCard(
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Unpaid & Active Orders",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isCompact = maxWidth < 700.dp
 
-                Spacer(modifier = Modifier.height(12.dp))
+        if (isCompact) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Compact Unpaid Orders Horizontal Selector
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "Active & Unpaid Orders",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
 
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(allOrders) { order ->
-                        val isSelected = selectedOrder?.id == order.id
-                        Card(
-                            onClick = { viewModel.selectOrderForBilling(order) },
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth().testTag("billing_order_${order.orderNumber}")
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        androidx.compose.foundation.lazy.LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            items(allOrders) { order ->
+                                val isSelected = selectedOrder?.id == order.id
+                                Card(
+                                    onClick = { viewModel.selectOrderForBilling(order) },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.testTag("billing_order_${order.orderNumber}")
+                                ) {
+                                    Column(modifier = Modifier.padding(10.dp)) {
+                                        Text(
+                                            text = order.orderNumber,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "Table ${order.tableNumber ?: "N/A"}",
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = "${config.currencySymbol}${String.format("%.2f", order.totalAmount)}",
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Checkout & Receipt Details Card
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    if (selectedOrder == null) {
+                        Box(modifier = Modifier.padding(24.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Text("Select an order above to view bill & checkout")
+                        }
+                    } else {
+                        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                            Text(
+                                text = "Tax Invoice Preview - ${selectedOrder.orderNumber}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Itemized table
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                selectedOrder.items.forEach { item ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "${item.quantity}x ${item.menuItem.name}",
+                                            modifier = Modifier.weight(1f),
+                                            fontSize = 13.sp
+                                        )
+                                        Text(
+                                            text = "${config.currencySymbol}${String.format("%.2f", item.subtotal)}",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Math breakdown
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                                    .padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Column {
-                                    Text(order.orderNumber, fontWeight = FontWeight.Bold)
-                                    Text("Table ${order.tableNumber ?: "N/A"} • ${order.orderType.label}", style = MaterialTheme.typography.bodySmall)
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Subtotal", fontSize = 13.sp)
+                                    Text("${config.currencySymbol}${String.format("%.2f", selectedOrder.subtotal)}", fontSize = 13.sp)
+                                }
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("GST Tax (5%)", fontSize = 13.sp)
+                                    Text("${config.currencySymbol}${String.format("%.2f", selectedOrder.taxAmount)}", fontSize = 13.sp)
+                                }
+                                if (selectedOrder.discount > 0) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("Discount", fontSize = 13.sp)
+                                        Text("-${config.currencySymbol}${String.format("%.2f", selectedOrder.discount)}", fontSize = 13.sp)
+                                    }
+                                }
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Grand Total", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text(
+                                        "${config.currencySymbol}${String.format("%.2f", selectedOrder.totalAmount)}",
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 16.sp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Text("Select Payment Method:", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            androidx.compose.foundation.lazy.LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(PaymentMethod.values()) { method ->
+                                    val isSelected = selectedPaymentMethod == method
+                                    OutlinedButton(
+                                        onClick = { selectedPaymentMethod = method },
+                                        modifier = Modifier.testTag("pay_method_${method.name}"),
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                        ),
+                                        shape = RoundedCornerShape(10.dp)
+                                    ) {
+                                        Text(method.label, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            viewModel.printThermalReceipt(selectedOrder, context)
+                                            showPrintModal = true
+                                        },
+                                        modifier = Modifier.weight(1f).testTag("print_receipt_btn")
+                                    ) {
+                                        Icon(Icons.Default.Print, contentDescription = "Print", modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Print Receipt", fontSize = 12.sp)
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = { viewModel.generatePdfInvoice(selectedOrder, context) },
+                                        modifier = Modifier.weight(1f).testTag("pdf_invoice_btn")
+                                    ) {
+                                        Icon(Icons.Default.PictureAsPdf, contentDescription = "PDF", modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("PDF Invoice", fontSize = 12.sp)
+                                    }
                                 }
 
-                                Text(
-                                    text = "${config.currencySymbol}${String.format("%.2f", order.totalAmount)}",
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                Button(
+                                    onClick = {
+                                        viewModel.updateOrderStatus(
+                                            orderId = selectedOrder.id,
+                                            status = com.example.domain.model.OrderStatus.COMPLETED,
+                                            paymentStatus = PaymentStatus.PAID,
+                                            method = selectedPaymentMethod
+                                        )
+                                    },
+                                    modifier = Modifier.fillMaxWidth().testTag("complete_payment_btn"),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Settle & Close Bill (${config.currencySymbol}${String.format("%.2f", selectedOrder.totalAmount)})", fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }
                 }
             }
-        }
+        } else {
+            // Wide Screen Side-By-Side View
+            Row(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                // Left Column: Unpaid Orders List
+                ElevatedCard(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Unpaid & Active Orders",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
 
-        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-        // Right Column: Checkout & Receipt Details
-        ElevatedCard(
-            modifier = Modifier.weight(1.5f).fillMaxHeight(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            if (selectedOrder == null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Select an order to view bill & checkout")
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(allOrders) { order ->
+                                val isSelected = selectedOrder?.id == order.id
+                                Card(
+                                    onClick = { viewModel.selectOrderForBilling(order) },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth().testTag("billing_order_${order.orderNumber}")
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column {
+                                            Text(order.orderNumber, fontWeight = FontWeight.Bold)
+                                            Text("Table ${order.tableNumber ?: "N/A"} • ${order.orderType.label}", style = MaterialTheme.typography.bodySmall)
+                                        }
+
+                                        Text(
+                                            text = "${config.currencySymbol}${String.format("%.2f", order.totalAmount)}",
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-            } else {
-                Column(modifier = Modifier.padding(20.dp).fillMaxSize()) {
-                    Text(
-                        text = "Tax Invoice Preview - ${selectedOrder.orderNumber}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.width(16.dp))
 
-                    // Itemized table
-                    LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(selectedOrder.items) { item ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("${item.quantity}x ${item.menuItem.name}", modifier = Modifier.weight(1f))
-                                Text("${config.currencySymbol}${String.format("%.2f", item.subtotal)}")
-                            }
+                // Right Column: Checkout & Receipt Details
+                ElevatedCard(
+                    modifier = Modifier.weight(1.5f).fillMaxHeight(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    if (selectedOrder == null) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("Select an order to view bill & checkout")
                         }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Math breakdown
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
-                            .padding(12.dp)
-                    ) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Subtotal")
-                            Text("${config.currencySymbol}${String.format("%.2f", selectedOrder.subtotal)}")
-                        }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("GST Tax (5%)")
-                            Text("${config.currencySymbol}${String.format("%.2f", selectedOrder.taxAmount)}")
-                        }
-                        if (selectedOrder.discount > 0) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Discount")
-                                Text("-${config.currencySymbol}${String.format("%.2f", selectedOrder.discount)}")
-                            }
-                        }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Grand Total", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    } else {
+                        Column(modifier = Modifier.padding(20.dp).fillMaxSize()) {
                             Text(
-                                "${config.currencySymbol}${String.format("%.2f", selectedOrder.totalAmount)}",
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 18.sp,
-                                color = MaterialTheme.colorScheme.primary
+                                text = "Tax Invoice Preview - ${selectedOrder.orderNumber}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
                             )
-                        }
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
-                    Text("Select Payment Method:", fontWeight = FontWeight.Bold)
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-                    ) {
-                        PaymentMethod.values().forEach { method ->
-                            val isSelected = selectedPaymentMethod == method
-                            OutlinedButton(
-                                onClick = { selectedPaymentMethod = method },
-                                modifier = Modifier.weight(1f).testTag("pay_method_${method.name}"),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-                                )
-                            ) {
-                                Text(method.label, fontSize = 11.sp)
+                            // Itemized table
+                            LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                items(selectedOrder.items) { item ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text("${item.quantity}x ${item.menuItem.name}", modifier = Modifier.weight(1f))
+                                        Text("${config.currencySymbol}${String.format("%.2f", item.subtotal)}")
+                                    }
+                                }
                             }
-                        }
-                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.printThermalReceipt(selectedOrder, context)
-                                showPrintModal = true
-                            },
-                            modifier = Modifier.weight(1f).testTag("print_receipt_btn")
-                        ) {
-                            Icon(Icons.Default.Print, contentDescription = "Print")
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Thermal Print")
-                        }
+                            // Math breakdown
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                                    .padding(12.dp)
+                            ) {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Subtotal")
+                                    Text("${config.currencySymbol}${String.format("%.2f", selectedOrder.subtotal)}")
+                                }
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("GST Tax (5%)")
+                                    Text("${config.currencySymbol}${String.format("%.2f", selectedOrder.taxAmount)}")
+                                }
+                                if (selectedOrder.discount > 0) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("Discount")
+                                        Text("-${config.currencySymbol}${String.format("%.2f", selectedOrder.discount)}")
+                                    }
+                                }
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Grand Total", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                    Text(
+                                        "${config.currencySymbol}${String.format("%.2f", selectedOrder.totalAmount)}",
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 18.sp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
 
-                        OutlinedButton(
-                            onClick = { viewModel.generatePdfInvoice(selectedOrder, context) },
-                            modifier = Modifier.weight(1f).testTag("pdf_invoice_btn")
-                        ) {
-                            Icon(Icons.Default.PictureAsPdf, contentDescription = "PDF")
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("PDF Invoice")
-                        }
+                            Spacer(modifier = Modifier.height(16.dp))
 
-                        Button(
-                            onClick = {
-                                viewModel.updateOrderStatus(
-                                    orderId = selectedOrder.id,
-                                    status = com.example.domain.model.OrderStatus.COMPLETED,
-                                    paymentStatus = PaymentStatus.PAID,
-                                    method = selectedPaymentMethod
-                                )
-                            },
-                            modifier = Modifier.weight(1.2f).testTag("complete_payment_btn")
-                        ) {
-                            Text("Settle & Close Bill")
+                            Text("Select Payment Method:", fontWeight = FontWeight.Bold)
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                            ) {
+                                PaymentMethod.values().forEach { method ->
+                                    val isSelected = selectedPaymentMethod == method
+                                    OutlinedButton(
+                                        onClick = { selectedPaymentMethod = method },
+                                        modifier = Modifier.weight(1f).testTag("pay_method_${method.name}"),
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                        )
+                                    ) {
+                                        Text(method.label, fontSize = 11.sp)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        viewModel.printThermalReceipt(selectedOrder, context)
+                                        showPrintModal = true
+                                    },
+                                    modifier = Modifier.weight(1f).testTag("print_receipt_btn")
+                                ) {
+                                    Icon(Icons.Default.Print, contentDescription = "Print")
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Thermal Print")
+                                }
+
+                                OutlinedButton(
+                                    onClick = { viewModel.generatePdfInvoice(selectedOrder, context) },
+                                    modifier = Modifier.weight(1f).testTag("pdf_invoice_btn")
+                                ) {
+                                    Icon(Icons.Default.PictureAsPdf, contentDescription = "PDF")
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("PDF Invoice")
+                                }
+
+                                Button(
+                                    onClick = {
+                                        viewModel.updateOrderStatus(
+                                            orderId = selectedOrder.id,
+                                            status = com.example.domain.model.OrderStatus.COMPLETED,
+                                            paymentStatus = PaymentStatus.PAID,
+                                            method = selectedPaymentMethod
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1.2f).testTag("complete_payment_btn")
+                                ) {
+                                    Text("Settle & Close Bill")
+                                }
+                            }
                         }
                     }
                 }

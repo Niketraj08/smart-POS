@@ -78,231 +78,500 @@ fun OrderRegisterScreen(viewModel: PosViewModel) {
 
     var showDiscountDialog by remember { mutableStateOf(false) }
     var itemForNotes by remember { mutableStateOf<CartItem?>(null) }
+    var selectedMobileTab by remember { mutableStateOf(0) } // 0: Menu, 1: Cart
 
     val subtotal = cart.sumOf { it.subtotal }
     val gstTax = cart.sumOf { it.gstAmount }
     val grandTotal = (subtotal - discount) + gstTax
 
-    Row(modifier = Modifier.fillMaxSize()) {
-        // Left Panel: Menu Items Grid (60% width)
-        Column(
-            modifier = Modifier
-                .weight(1.3f)
-                .fillMaxHeight()
-                .padding(16.dp)
-        ) {
-            // Search & Category Bar
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { viewModel.setSearchQuery(it) },
-                    placeholder = { Text("Search dish or beverage...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                    modifier = Modifier.weight(1f).testTag("pos_search_input"),
-                    singleLine = true
-                )
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isCompact = maxWidth < 700.dp
 
-                if (selectedTable != null) {
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                        shape = RoundedCornerShape(12.dp)
+        if (isCompact) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Mobile Tab Switcher
+                androidx.compose.material3.TabRow(selectedTabIndex = selectedMobileTab) {
+                    androidx.compose.material3.Tab(
+                        selected = selectedMobileTab == 0,
+                        onClick = { selectedMobileTab = 0 },
+                        text = { Text("1. Menu Items", fontWeight = FontWeight.Bold) }
+                    )
+                    androidx.compose.material3.Tab(
+                        selected = selectedMobileTab == 1,
+                        onClick = { selectedMobileTab = 1 },
+                        text = {
+                            Text(
+                                "2. Cart (${cart.sumOf { it.quantity }})",
+                                fontWeight = FontWeight.Bold,
+                                color = if (cart.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    )
+                }
+
+                if (selectedMobileTab == 0) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(12.dp)
+                        ) {
+                            // Search & Table Badge
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedTextField(
+                                    value = searchQuery,
+                                    onValueChange = { viewModel.setSearchQuery(it) },
+                                    placeholder = { Text("Search menu...") },
+                                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                                    modifier = Modifier.weight(1f).testTag("pos_search_input"),
+                                    singleLine = true
+                                )
+
+                                if (selectedTable != null) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Card(
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.TableBar, contentDescription = "Table", modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("T${selectedTable?.tableNumber}", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Categories Filter Chips
+                            androidx.compose.foundation.lazy.LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                item {
+                                    FilterChip(
+                                        selected = selectedCatId == null,
+                                        onClick = { viewModel.selectCategory(null) },
+                                        label = { Text("All") }
+                                    )
+                                }
+                                items(categories) { cat ->
+                                    FilterChip(
+                                        selected = selectedCatId == cat.id,
+                                        onClick = { viewModel.selectCategory(cat.id) },
+                                        label = { Text(cat.name) }
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Menu Items Grid
+                            LazyVerticalGrid(
+                                columns = GridCells.Adaptive(minSize = 140.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                items(filteredItems) { item ->
+                                    PosItemTile(
+                                        item = item,
+                                        currencySymbol = config.currencySymbol,
+                                        onClick = { viewModel.addToCart(item) }
+                                    )
+                                }
+                            }
+                        }
+
+                        // Floating View Cart Bar if items exist
+                        if (cart.isNotEmpty()) {
+                            Button(
+                                onClick = { selectedMobileTab = 1 },
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                                    .testTag("floating_view_cart_btn"),
+                                shape = RoundedCornerShape(14.dp),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("View Cart (${cart.sumOf { it.quantity }} items)", fontWeight = FontWeight.Bold)
+                                    Text("${config.currencySymbol}${String.format("%.2f", grandTotal)}  →", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Mobile Order Cart Panel
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.TableBar, contentDescription = "Table", modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Table: ${selectedTable?.tableNumber}", fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Categories Filter Chips
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                FilterChip(
-                    selected = selectedCatId == null,
-                    onClick = { viewModel.selectCategory(null) },
-                    label = { Text("All") }
-                )
-                categories.forEach { cat ->
-                    FilterChip(
-                        selected = selectedCatId == cat.id,
-                        onClick = { viewModel.selectCategory(cat.id) },
-                        label = { Text(cat.name) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Menu Items Grid
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 160.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(filteredItems) { item ->
-                    PosItemTile(
-                        item = item,
-                        currencySymbol = config.currencySymbol,
-                        onClick = { viewModel.addToCart(item) }
-                    )
-                }
-            }
-        }
-
-        // Right Panel: Active Order Ticket (40% width)
-        ElevatedCard(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .padding(top = 16.dp, end = 16.dp, bottom = 16.dp),
-            shape = RoundedCornerShape(20.dp),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                // Ticket Header: Order Type Selector
-                Text(
-                    text = "Active Ticket",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OrderType.values().forEach { type ->
-                        val isSelected = orderType == type
-                        Button(
-                            onClick = { viewModel.setOrderType(type) },
-                            modifier = Modifier.weight(1f).testTag("order_type_${type.name}"),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(type.label, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Cart Items List
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(cart) { item ->
-                        CartRowItem(
-                            item = item,
-                            currencySymbol = config.currencySymbol,
-                            onAdd = { viewModel.updateCartQuantity(item, 1) },
-                            onMinus = { viewModel.updateCartQuantity(item, -1) },
-                            onNotes = { itemForNotes = item }
+                        Text(
+                            text = "Order Summary Ticket",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        androidx.compose.foundation.lazy.LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(OrderType.values()) { type ->
+                                val isSelected = orderType == type
+                                Button(
+                                    onClick = { viewModel.setOrderType(type) },
+                                    modifier = Modifier.testTag("order_type_${type.name}"),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                        contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    ),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text(type.label, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Cart Items List
+                        LazyColumn(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(cart) { item ->
+                                CartRowItem(
+                                    item = item,
+                                    currencySymbol = config.currencySymbol,
+                                    onAdd = { viewModel.updateCartQuantity(item, 1) },
+                                    onMinus = { viewModel.updateCartQuantity(item, -1) },
+                                    onNotes = { itemForNotes = item }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Summary Billing Math
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(12.dp))
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Subtotal", style = MaterialTheme.typography.bodySmall)
+                                Text("${config.currencySymbol}${String.format("%.2f", subtotal)}", style = MaterialTheme.typography.bodySmall)
+                            }
+
+                            if (discount > 0) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Discount", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                    Text("-${config.currencySymbol}${String.format("%.2f", discount)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("GST Tax (5%)", style = MaterialTheme.typography.bodySmall)
+                                Text("${config.currencySymbol}${String.format("%.2f", gstTax)}", style = MaterialTheme.typography.bodySmall)
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Total Amount", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text(
+                                    text = "${config.currencySymbol}${String.format("%.2f", grandTotal)}",
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 17.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedButton(
+                                onClick = { showDiscountDialog = true },
+                                modifier = Modifier.weight(1f).testTag("apply_discount_btn")
+                            ) {
+                                Text("Discount", fontSize = 12.sp)
+                            }
+
+                            Button(
+                                onClick = {
+                                    viewModel.sendOrderToKitchen { createdOrder ->
+                                        viewModel.navigateTo("kds")
+                                    }
+                                },
+                                enabled = cart.isNotEmpty(),
+                                modifier = Modifier.weight(1.5f).testTag("send_to_kitchen_btn"),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.Send, contentDescription = "Send", modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Send to Kitchen", fontSize = 13.sp)
+                            }
+                        }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Summary Billing Math
+            }
+        } else {
+            // Wide Screen Split View
+            Row(modifier = Modifier.fillMaxSize()) {
+                // Left Panel: Menu Items Grid (60% width)
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(16.dp))
-                        .padding(12.dp)
+                        .weight(1.3f)
+                        .fillMaxHeight()
+                        .padding(16.dp)
                 ) {
+                    // Search & Category Bar
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Subtotal", style = MaterialTheme.typography.bodySmall)
-                        Text("${config.currencySymbol}${String.format("%.2f", subtotal)}", style = MaterialTheme.typography.bodySmall)
-                    }
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { viewModel.setSearchQuery(it) },
+                            placeholder = { Text("Search dish or beverage...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                            modifier = Modifier.weight(1f).testTag("pos_search_input"),
+                            singleLine = true
+                        )
 
-                    if (discount > 0) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Discount", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                            Text("-${config.currencySymbol}${String.format("%.2f", discount)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                        if (selectedTable != null) {
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.TableBar, contentDescription = "Table", modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Table: ${selectedTable?.tableNumber}", fontWeight = FontWeight.Bold)
+                                }
+                            }
                         }
                     }
 
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Categories Filter Chips
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("GST Tax (5%)", style = MaterialTheme.typography.bodySmall)
-                        Text("${config.currencySymbol}${String.format("%.2f", gstTax)}", style = MaterialTheme.typography.bodySmall)
+                        FilterChip(
+                            selected = selectedCatId == null,
+                            onClick = { viewModel.selectCategory(null) },
+                            label = { Text("All") }
+                        )
+                        categories.forEach { cat ->
+                            FilterChip(
+                                selected = selectedCatId == cat.id,
+                                onClick = { viewModel.selectCategory(cat.id) },
+                                label = { Text(cat.name) }
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    // Menu Items Grid
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 160.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        Text("Total Amount", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text(
-                            text = "${config.currencySymbol}${String.format("%.2f", grandTotal)}",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        items(filteredItems) { item ->
+                            PosItemTile(
+                                item = item,
+                                currencySymbol = config.currencySymbol,
+                                onClick = { viewModel.addToCart(item) }
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Action Buttons
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+                // Right Panel: Active Order Ticket (40% width)
+                ElevatedCard(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(top = 16.dp, end = 16.dp, bottom = 16.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
                 ) {
-                    OutlinedButton(
-                        onClick = { showDiscountDialog = true },
-                        modifier = Modifier.weight(1f).testTag("apply_discount_btn")
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
                     ) {
-                        Text("Discount")
-                    }
+                        // Ticket Header: Order Type Selector
+                        Text(
+                            text = "Active Ticket",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
 
-                    Button(
-                        onClick = {
-                            viewModel.sendOrderToKitchen { createdOrder ->
-                                viewModel.navigateTo("kds")
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OrderType.values().forEach { type ->
+                                val isSelected = orderType == type
+                                Button(
+                                    onClick = { viewModel.setOrderType(type) },
+                                    modifier = Modifier.weight(1f).testTag("order_type_${type.name}"),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                        contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text(type.label, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
-                        },
-                        enabled = cart.isNotEmpty(),
-                        modifier = Modifier.weight(1.5f).testTag("send_to_kitchen_btn"),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Default.Send, contentDescription = "Send")
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Send to Kitchen")
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Cart Items List
+                        LazyColumn(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(cart) { item ->
+                                CartRowItem(
+                                    item = item,
+                                    currencySymbol = config.currencySymbol,
+                                    onAdd = { viewModel.updateCartQuantity(item, 1) },
+                                    onMinus = { viewModel.updateCartQuantity(item, -1) },
+                                    onNotes = { itemForNotes = item }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Summary Billing Math
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(16.dp))
+                                .padding(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Subtotal", style = MaterialTheme.typography.bodySmall)
+                                Text("${config.currencySymbol}${String.format("%.2f", subtotal)}", style = MaterialTheme.typography.bodySmall)
+                            }
+
+                            if (discount > 0) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Discount", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                    Text("-${config.currencySymbol}${String.format("%.2f", discount)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("GST Tax (5%)", style = MaterialTheme.typography.bodySmall)
+                                Text("${config.currencySymbol}${String.format("%.2f", gstTax)}", style = MaterialTheme.typography.bodySmall)
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Total Amount", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text(
+                                    text = "${config.currencySymbol}${String.format("%.2f", grandTotal)}",
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 18.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Action Buttons
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedButton(
+                                onClick = { showDiscountDialog = true },
+                                modifier = Modifier.weight(1f).testTag("apply_discount_btn")
+                            ) {
+                                Text("Discount")
+                            }
+
+                            Button(
+                                onClick = {
+                                    viewModel.sendOrderToKitchen { createdOrder ->
+                                        viewModel.navigateTo("kds")
+                                    }
+                                },
+                                enabled = cart.isNotEmpty(),
+                                modifier = Modifier.weight(1.5f).testTag("send_to_kitchen_btn"),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.Send, contentDescription = "Send")
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Send to Kitchen")
+                            }
+                        }
                     }
                 }
             }
