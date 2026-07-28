@@ -1,6 +1,8 @@
 package com.example.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,18 +19,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Kitchen
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TableBar
 import androidx.compose.material3.DropdownMenu
@@ -39,6 +41,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -52,12 +55,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.domain.model.UserRole
 import com.example.ui.screens.auth.LoginScreen
 import com.example.ui.screens.billing.BillingReceiptScreen
@@ -96,7 +103,7 @@ fun SmartPosApp(viewModel: PosViewModel) {
         NavItem("kds", "KDS", Icons.Default.Kitchen),
         NavItem("billing", "Billing", Icons.Default.Receipt),
         NavItem("menu", "Menu", Icons.Default.MenuBook),
-        NavItem("qrmenu", "QR Code", Icons.Default.QrCode),
+        NavItem("qrmenu", "QR Scanner", Icons.Default.QrCode),
         NavItem("inventory", "Inventory", Icons.Default.Inventory),
         NavItem("customers", "Customers", Icons.Default.People),
         NavItem("employees", "Staff", Icons.Default.Badge),
@@ -108,37 +115,94 @@ fun SmartPosApp(viewModel: PosViewModel) {
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        // Custom Generated Restaurant Brand Logo Badge
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(42.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
+                                .border(
+                                    width = 2.dp,
+                                    brush = Brush.linearGradient(
+                                        listOf(Color(0xFFFFB300), Color(0xFFFF6D00))
+                                    ),
+                                    shape = CircleShape
+                                )
+                                .background(Color.Black),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.RestaurantMenu,
-                                contentDescription = "Logo",
-                                modifier = Modifier.size(22.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                            Image(
+                                painter = painterResource(id = R.drawable.img_restaurant_logo),
+                                contentDescription = "Restaurant Logo",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
                             )
                         }
-                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
                         Column {
-                            Text(config.restaurantName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text("SmartPOS v1.0", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp)
+                            Text(
+                                text = config.restaurantName,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 17.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF00E676))
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "SmartPOS • Live POS & ML Scanner",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 },
                 actions = {
+                    // Quick ML Scanner Trigger Button
+                    IconButton(
+                        onClick = { viewModel.navigateTo("qrmenu") },
+                        modifier = Modifier
+                            .testTag("topbar_qr_scanner_btn")
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.QrCodeScanner,
+                            contentDescription = "Scan QR Code",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
                     // Role Switcher Dropdown Chip
                     Box {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(MaterialTheme.colorScheme.primaryContainer)
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                    RoundedCornerShape(20.dp)
+                                )
                                 .clickable { showRoleDropdown = true }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .padding(horizontal = 14.dp, vertical = 7.dp)
                                 .testTag("role_switcher_chip"),
                             contentAlignment = Alignment.Center
                         ) {
@@ -156,7 +220,7 @@ fun SmartPosApp(viewModel: PosViewModel) {
                         ) {
                             UserRole.values().forEach { role ->
                                 DropdownMenuItem(
-                                    text = { Text(role.displayName) },
+                                    text = { Text(role.displayName, fontWeight = FontWeight.Medium) },
                                     onClick = {
                                         viewModel.switchRole(role)
                                         showRoleDropdown = false
@@ -166,13 +230,17 @@ fun SmartPosApp(viewModel: PosViewModel) {
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
 
                     IconButton(
                         onClick = { viewModel.logout() },
                         modifier = Modifier.testTag("logout_button")
                     ) {
-                        Icon(Icons.Default.Logout, contentDescription = "Logout")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = "Logout",
+                            tint = MaterialTheme.colorScheme.error
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -189,14 +257,32 @@ fun SmartPosApp(viewModel: PosViewModel) {
             // Side Navigation Rail
             NavigationRail(
                 modifier = Modifier.fillMaxHeight(),
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             ) {
                 navItems.forEach { item ->
+                    val isSelected = currentScreen == item.id
                     NavigationRailItem(
-                        selected = currentScreen == item.id,
+                        selected = isSelected,
                         onClick = { viewModel.navigateTo(item.id) },
-                        icon = { Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label, fontSize = 10.sp) },
+                        icon = {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = item.label,
+                                fontSize = 10.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        colors = NavigationRailItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
                         modifier = Modifier.testTag("nav_rail_${item.id}")
                     )
                 }
