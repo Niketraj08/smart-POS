@@ -18,6 +18,7 @@ enum class OrderStatus(val label: String) {
     PENDING("New Order"),
     PREPARING("In Kitchen"),
     READY("Ready to Serve"),
+    SERVED("Served"),
     BILLED("Billed"),
     COMPLETED("Completed"),
     CANCELLED("Cancelled")

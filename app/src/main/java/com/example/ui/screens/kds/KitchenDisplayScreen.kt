@@ -13,25 +13,33 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Kitchen
+import androidx.compose.material.icons.filled.LocalDining
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,6 +54,12 @@ import com.example.ui.PosViewModel
 @Composable
 fun KitchenDisplayScreen(viewModel: PosViewModel) {
     val kitchenOrders by viewModel.kitchenOrders.collectAsState()
+    var selectedFilter by remember { mutableStateOf<OrderStatus?>(null) } // null = All active
+
+    val filteredOrders = when (selectedFilter) {
+        null -> kitchenOrders
+        else -> kitchenOrders.filter { it.status == selectedFilter }
+    }
 
     Column(
         modifier = Modifier
@@ -64,7 +78,7 @@ fun KitchenDisplayScreen(viewModel: PosViewModel) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Real-time kitchen order tickets & preparation tracking",
+                    text = "Real-time ticket dispatch, cooking state & serve tracking",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -77,9 +91,46 @@ fun KitchenDisplayScreen(viewModel: PosViewModel) {
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        if (kitchenOrders.isEmpty()) {
+        // Status Filter Chips
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            item {
+                FilterChip(
+                    selected = selectedFilter == null,
+                    onClick = { selectedFilter = null },
+                    label = { Text("All Active (${kitchenOrders.size})") }
+                )
+            }
+            item {
+                FilterChip(
+                    selected = selectedFilter == OrderStatus.PENDING,
+                    onClick = { selectedFilter = OrderStatus.PENDING },
+                    label = { Text("New / Pending (${kitchenOrders.count { it.status == OrderStatus.PENDING }})") }
+                )
+            }
+            item {
+                FilterChip(
+                    selected = selectedFilter == OrderStatus.PREPARING,
+                    onClick = { selectedFilter = OrderStatus.PREPARING },
+                    label = { Text("Cooking (${kitchenOrders.count { it.status == OrderStatus.PREPARING }})") }
+                )
+            }
+            item {
+                FilterChip(
+                    selected = selectedFilter == OrderStatus.READY,
+                    onClick = { selectedFilter = OrderStatus.READY },
+                    label = { Text("Ready to Serve (${kitchenOrders.count { it.status == OrderStatus.READY }})") }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (filteredOrders.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -93,7 +144,7 @@ fun KitchenDisplayScreen(viewModel: PosViewModel) {
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "All kitchen tickets completed! No pending orders.",
+                        text = if (selectedFilter == null) "All kitchen tickets completed! No active orders." else "No orders matching selected status.",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -106,11 +157,17 @@ fun KitchenDisplayScreen(viewModel: PosViewModel) {
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(kitchenOrders) { order ->
+                items(filteredOrders) { order ->
                     KitchenTicketCard(
                         order = order,
+                        onStartCooking = {
+                            viewModel.updateOrderStatus(order.id, OrderStatus.PREPARING)
+                        },
                         onMarkOrderReady = {
                             viewModel.updateOrderStatus(order.id, OrderStatus.READY)
+                        },
+                        onMarkServed = {
+                            viewModel.updateOrderStatus(order.id, OrderStatus.SERVED)
                         }
                     )
                 }
@@ -134,7 +191,9 @@ private fun KdsLegend(label: String, color: Color) {
 @Composable
 private fun KitchenTicketCard(
     order: OrderSummary,
-    onMarkOrderReady: () -> Unit
+    onStartCooking: () -> Unit,
+    onMarkOrderReady: () -> Unit,
+    onMarkServed: () -> Unit
 ) {
     val elapsedMinutes = ((System.currentTimeMillis() - order.createdAt) / (1000 * 60)).toInt()
     val timerColor = when {
@@ -160,11 +219,15 @@ private fun KitchenTicketCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(
-                        text = order.orderNumber,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = order.orderNumber,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        OrderStatusBadge(order.status)
+                    }
                     Text(
                         text = "Table ${order.tableNumber ?: "N/A"} • ${order.orderType.label}",
                         style = MaterialTheme.typography.bodySmall,
@@ -216,8 +279,12 @@ private fun KitchenTicketCard(
                     Box(
                         modifier = Modifier
                             .background(
-                                if (item.status == OrderStatus.READY) Color(0xFF2E7D32).copy(alpha = 0.2f)
-                                else MaterialTheme.colorScheme.surfaceVariant,
+                                when (item.status) {
+                                    OrderStatus.READY -> Color(0xFF2E7D32).copy(alpha = 0.2f)
+                                    OrderStatus.PREPARING -> Color(0xFFF57F17).copy(alpha = 0.2f)
+                                    OrderStatus.SERVED -> Color(0xFF1976D2).copy(alpha = 0.2f)
+                                    else -> MaterialTheme.colorScheme.surfaceVariant
+                                },
                                 RoundedCornerShape(8.dp)
                             )
                             .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -233,18 +300,89 @@ private fun KitchenTicketCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = onMarkOrderReady,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("kds_mark_ready_${order.orderNumber}"),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Default.CheckCircle, contentDescription = "Ready")
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Mark Ticket Ready")
+            // Workflow Step Buttons: Pending -> Cooking -> Ready -> Serve
+            when (order.status) {
+                OrderStatus.PENDING -> {
+                    Button(
+                        onClick = onStartCooking,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("kds_start_cooking_${order.orderNumber}"),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Restaurant, contentDescription = "Start Cooking")
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("🍳 Start Cooking")
+                    }
+                }
+                OrderStatus.PREPARING -> {
+                    Button(
+                        onClick = onMarkOrderReady,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("kds_mark_ready_${order.orderNumber}"),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = "Mark Cooked")
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("✅ Cooked & Ready")
+                    }
+                }
+                OrderStatus.READY -> {
+                    Button(
+                        onClick = onMarkServed,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("kds_mark_served_${order.orderNumber}"),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.LocalDining, contentDescription = "Serve Order")
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("🍽️ Serve & Deliver")
+                    }
+                }
+                else -> {
+                    Button(
+                        onClick = onMarkServed,
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = false
+                    ) {
+                        Icon(Icons.Default.DoneAll, contentDescription = "Completed")
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Completed")
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun OrderStatusBadge(status: OrderStatus) {
+    val (bgColor, textColor) = when (status) {
+        OrderStatus.PENDING -> Color(0xFFFFF3E0) to Color(0xFFE65100)
+        OrderStatus.PREPARING -> Color(0xFFFFF8E1) to Color(0xFFF57F17)
+        OrderStatus.READY -> Color(0xFFE8F5E9) to Color(0xFF2E7D32)
+        OrderStatus.SERVED -> Color(0xFFE3F2FD) to Color(0xFF1976D2)
+        else -> Color.LightGray to Color.DarkGray
+    }
+
+    Box(
+        modifier = Modifier
+            .background(bgColor, RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = status.label,
+            color = textColor,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
