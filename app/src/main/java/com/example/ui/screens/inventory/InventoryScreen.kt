@@ -131,7 +131,7 @@ fun InventoryScreen(viewModel: PosViewModel) {
                         OutlinedTextField(value = category, onValueChange = { category = it }, label = { Text("Category (e.g. Meat, Dairy)") }, modifier = Modifier.fillMaxWidth())
                         OutlinedTextField(value = stockStr, onValueChange = { stockStr = it }, label = { Text("Current Stock Quantity") }, modifier = Modifier.fillMaxWidth())
                         OutlinedTextField(value = unit, onValueChange = { unit = it }, label = { Text("Unit (kg, L, can, pcs)") }, modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(value = costStr, onValueChange = { costStr = it }, label = { Text("Cost Per Unit ($)") }, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = costStr, onValueChange = { costStr = it }, label = { Text("Cost Per Unit (₹)") }, modifier = Modifier.fillMaxWidth())
                     }
                 },
                 confirmButton = {

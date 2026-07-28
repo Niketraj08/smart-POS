@@ -99,7 +99,7 @@ object DatabaseInitializer {
                     address = "123 Gourmet Street, Foodville, NY 10001",
                     phone = "+1 (555) 019-2831",
                     gstin = "27AABCU9603R1ZM",
-                    currencySymbol = "$",
+                    currencySymbol = "₹",
                     defaultTaxRate = 5.0
                 )
             )

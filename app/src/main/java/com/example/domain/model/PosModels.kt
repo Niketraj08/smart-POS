@@ -137,6 +137,6 @@ data class RestaurantConfig(
     val address: String = "123 Gourmet Street, Foodville, NY 10001",
     val phone: String = "+1 (555) 019-2831",
     val gstin: String = "27AABCU9603R1ZM",
-    val currencySymbol: String = "$",
+    val currencySymbol: String = "₹",
     val defaultTaxRate: Double = 5.0
 )

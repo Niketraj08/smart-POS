@@ -100,7 +100,7 @@ fun SettingsScreen(viewModel: PosViewModel) {
                 OutlinedTextField(
                     value = currencySymbol,
                     onValueChange = { currencySymbol = it },
-                    label = { Text("Currency Symbol ($)") },
+                    label = { Text("Currency Symbol (₹)") },
                     modifier = Modifier.fillMaxWidth()
                 )
 

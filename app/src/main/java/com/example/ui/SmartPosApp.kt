@@ -39,6 +39,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.NavigationRailItemDefaults
@@ -257,39 +260,46 @@ fun SmartPosApp(viewModel: PosViewModel) {
             },
             bottomBar = {
                 if (isCompact) {
-                    androidx.compose.material3.ScrollableTabRow(
-                        selectedTabIndex = navItems.indexOfFirst { it.id == currentScreen }.coerceAtLeast(0),
-                        edgePadding = 8.dp,
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
+                    val bottomNavItems = listOf(
+                        NavItem("dashboard", "Dashboard", Icons.Default.Dashboard),
+                        NavItem("orders", "Orders", Icons.Default.PointOfSale),
+                        NavItem("menu", "Menu", Icons.Default.MenuBook),
+                        NavItem("settings", "Settings", Icons.Default.Settings)
+                    )
+                    NavigationBar(
+                        containerColor = MaterialTheme.colorScheme.surface,
                         contentColor = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("bottom_navigation_bar")
                     ) {
-                        navItems.forEach { item ->
+                        bottomNavItems.forEach { item ->
                             val isSelected = currentScreen == item.id
-                            androidx.compose.material3.Tab(
+                            NavigationBarItem(
                                 selected = isSelected,
                                 onClick = { viewModel.navigateTo(item.id) },
-                                modifier = Modifier.testTag("nav_bottom_${item.id}"),
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = item.icon,
-                                            contentDescription = item.label,
-                                            modifier = Modifier.size(18.dp),
-                                            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = item.label,
-                                            fontSize = 12.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
+                                icon = {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = item.label,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                },
+                                label = {
+                                    Text(
+                                        text = item.label,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                modifier = Modifier.testTag("nav_bottom_${item.id}")
                             )
                         }
                     }
