@@ -252,7 +252,13 @@ fun BillingReceiptScreen(viewModel: PosViewModel) {
                                     }
 
                                     OutlinedButton(
-                                        onClick = { viewModel.generatePdfInvoice(selectedOrder, context) },
+                                        onClick = {
+                                            viewModel.generatePdfInvoice(selectedOrder, context)
+                                            val file = viewModel.generatedPdfFile.value
+                                            if (file != null) {
+                                                com.example.domain.util.PdfDownloader.downloadAndOpenPdf(context, file)
+                                            }
+                                        },
                                         modifier = Modifier.weight(1f).testTag("pdf_invoice_btn")
                                     ) {
                                         Icon(Icons.Default.PictureAsPdf, contentDescription = "PDF", modifier = Modifier.size(16.dp))
@@ -438,7 +444,13 @@ fun BillingReceiptScreen(viewModel: PosViewModel) {
                                 }
 
                                 OutlinedButton(
-                                    onClick = { viewModel.generatePdfInvoice(selectedOrder, context) },
+                                    onClick = {
+                                        viewModel.generatePdfInvoice(selectedOrder, context)
+                                        val file = viewModel.generatedPdfFile.value
+                                        if (file != null) {
+                                            com.example.domain.util.PdfDownloader.downloadAndOpenPdf(context, file)
+                                        }
+                                    },
                                     modifier = Modifier.weight(1f).testTag("pdf_invoice_btn")
                                 ) {
                                     Icon(Icons.Default.PictureAsPdf, contentDescription = "PDF")
