@@ -1,10 +1,14 @@
 package com.example.domain.util
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
+import com.example.R
 import com.example.domain.model.OrderSummary
 import com.example.domain.model.RestaurantConfig
 import java.io.File
@@ -30,19 +34,9 @@ object PdfInvoiceGenerator {
             textSize = 22f
             isFakeBoldText = true
         }
-        val goldSubTitlePaint = Paint().apply {
-            color = Color.parseColor("#B8860B") // Dark Gold
-            textSize = 12f
-            isFakeBoldText = true
-        }
         val headerInfoPaint = Paint().apply {
             color = Color.DKGRAY
             textSize = 10f
-        }
-        val gstBadgePaint = Paint().apply {
-            color = Color.parseColor("#8C1D11")
-            textSize = 11f
-            isFakeBoldText = true
         }
         val boldPaint = Paint().apply {
             color = Color.BLACK
@@ -74,39 +68,50 @@ object PdfInvoiceGenerator {
             strokeWidth = 0.5f
         })
 
-        var yPos = 45f
+        var yPos = 35f
 
         // Top Header Banner Box (Luxury Crimson)
-        val headerBox = RectF(startX, yPos, endX, yPos + 75f)
+        val headerBox = RectF(startX, yPos, endX, yPos + 80f)
         canvas.drawRoundRect(headerBox, 8f, 8f, Paint().apply { color = Color.parseColor("#8C1D11") })
 
+        // Draw Restaurant Logo inside Top Header
+        try {
+            val logoBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.img_swad_sutra_logo)
+            if (logoBitmap != null) {
+                val logoRect = RectF(startX + 12f, yPos + 10f, startX + 72f, yPos + 70f)
+                canvas.drawBitmap(logoBitmap, null, logoRect, null)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         // Restaurant Branding Inside Banner
-        canvas.drawText("SWAD SUTRA FINE DINING", startX + 15f, yPos + 28f, Paint().apply {
+        canvas.drawText("SWAD SUTRA FINE DINING", startX + 82f, yPos + 30f, Paint().apply {
             color = Color.parseColor("#D4AF37")
-            textSize = 20f
+            textSize = 19f
             isFakeBoldText = true
         })
-        canvas.drawText("LUXURY GASTRONOMY & POS SUITE", startX + 15f, yPos + 44f, Paint().apply {
+        canvas.drawText("LUXURY GASTRONOMY & POS SUITE", startX + 82f, yPos + 46f, Paint().apply {
             color = Color.WHITE
-            textSize = 10f
+            textSize = 9.5f
         })
 
         val gstinStr = if (config.gstin.isNotBlank()) config.gstin else "07AAAAA0000A1Z5"
-        canvas.drawText("GSTIN: $gstinStr", 350f, yPos + 28f, Paint().apply {
+        canvas.drawText("GSTIN: $gstinStr", 360f, yPos + 28f, Paint().apply {
             color = Color.parseColor("#D4AF37")
             textSize = 11f
             isFakeBoldText = true
         })
-        canvas.drawText("FSSAI Lic No: 12421008000451", 350f, yPos + 44f, Paint().apply {
+        canvas.drawText("FSSAI Lic No: 12421008000451", 360f, yPos + 44f, Paint().apply {
             color = Color.WHITE
             textSize = 9.5f
         })
-        canvas.drawText("Phone: ${config.phone}", 350f, yPos + 58f, Paint().apply {
+        canvas.drawText("Phone: ${config.phone}", 360f, yPos + 58f, Paint().apply {
             color = Color.LTGRAY
             textSize = 9f
         })
 
-        yPos += 88f
+        yPos += 92f
 
         // Address Row
         canvas.drawText("${config.address} • Email: info@swadsutra.com", startX, yPos, headerInfoPaint)
@@ -215,12 +220,136 @@ object PdfInvoiceGenerator {
             textSize = 9.5f
             isFakeBoldText = true
         }
-        canvas.drawText("Software Developed & Powered by AstraCognix Solution • www.astracognix.com", startX, yPos, creditPaint)
+        canvas.drawText("Software Developed & Powered by AstraCognix Solution • www.astracognixsolutions.in", startX, yPos, creditPaint)
 
         pdfDocument.finishPage(page)
 
         return try {
             val file = File(context.cacheDir, "SwadSutra_TaxInvoice_${order.orderNumber}.pdf")
+            val outputStream = FileOutputStream(file)
+            pdfDocument.writeTo(outputStream)
+            pdfDocument.close()
+            outputStream.close()
+            file
+        } catch (e: Exception) {
+            e.printStackTrace()
+            pdfDocument.close()
+            null
+        }
+    }
+
+    /**
+     * Generates a 80mm thermal receipt optimized PDF layout with top restaurant logo
+     */
+    fun generateThermalReceiptPdf(
+        context: Context,
+        order: OrderSummary,
+        config: RestaurantConfig
+    ): File? {
+        val pdfDocument = PdfDocument()
+        // 80mm paper width = ~226 points width, height dynamic ~600 points
+        val pageInfo = PdfDocument.PageInfo.Builder(226, 620, 1).create()
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas = page.canvas
+
+        val boldPaint = Paint().apply { color = Color.BLACK; textSize = 9f; isFakeBoldText = true }
+        val titlePaint = Paint().apply { color = Color.parseColor("#8C1D11"); textSize = 11f; isFakeBoldText = true }
+        val regularPaint = Paint().apply { color = Color.BLACK; textSize = 8.5f }
+        val centerPaint = Paint().apply { color = Color.BLACK; textSize = 8.5f; textAlign = Paint.Align.CENTER }
+        val centerTitlePaint = Paint().apply { color = Color.parseColor("#8C1D11"); textSize = 11f; isFakeBoldText = true; textAlign = Paint.Align.CENTER }
+        val centerGoldPaint = Paint().apply { color = Color.parseColor("#B8860B"); textSize = 8f; isFakeBoldText = true; textAlign = Paint.Align.CENTER }
+        val linePaint = Paint().apply { color = Color.GRAY; strokeWidth = 1f }
+
+        val startX = 10f
+        val endX = 216f
+        val centerX = 113f
+        var yPos = 15f
+
+        // Top Logo image for thermal receipt
+        try {
+            val logoBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.img_swad_sutra_logo)
+            if (logoBitmap != null) {
+                val logoRect = RectF(centerX - 22f, yPos, centerX + 22f, yPos + 44f)
+                canvas.drawBitmap(logoBitmap, null, logoRect, null)
+                yPos += 50f
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            yPos += 5f
+        }
+
+        canvas.drawText("SWAD SUTRA FINE DINING", centerX, yPos, centerTitlePaint)
+        yPos += 12f
+        canvas.drawText(config.address.take(35), centerX, yPos, centerPaint)
+        yPos += 11f
+        canvas.drawText("Tel: ${config.phone}", centerX, yPos, centerPaint)
+        yPos += 11f
+        val gstinStr = if (config.gstin.isNotBlank()) config.gstin else "07AAAAA0000A1Z5"
+        canvas.drawText("GSTIN: $gstinStr", centerX, yPos, centerGoldPaint)
+        yPos += 14f
+
+        canvas.drawLine(startX, yPos, endX, yPos, linePaint)
+        yPos += 12f
+
+        val dateStr = SimpleDateFormat("dd/MM/yy HH:mm", Locale.getDefault()).format(Date(order.createdAt))
+        canvas.drawText("Order #: ${order.orderNumber}", startX, yPos, boldPaint)
+        canvas.drawText(dateStr, 130f, yPos, regularPaint)
+        yPos += 12f
+
+        canvas.drawText("Table: ${order.tableNumber ?: "N/A"} (${order.orderType.label})", startX, yPos, regularPaint)
+        canvas.drawText("Guest: ${order.customerName?.take(10) ?: "Walk-in"}", 130f, yPos, regularPaint)
+        yPos += 14f
+
+        canvas.drawLine(startX, yPos, endX, yPos, linePaint)
+        yPos += 12f
+
+        // Table Header
+        canvas.drawText("QTY", startX, yPos, boldPaint)
+        canvas.drawText("ITEM", startX + 30f, yPos, boldPaint)
+        canvas.drawText("AMT(₹)", endX - 35f, yPos, boldPaint)
+        yPos += 12f
+
+        for (item in order.items) {
+            canvas.drawText("${item.quantity}x", startX, yPos, regularPaint)
+            canvas.drawText(item.menuItem.name.take(18), startX + 28f, yPos, regularPaint)
+            canvas.drawText(String.format(Locale.US, "%.2f", item.subtotal), endX - 38f, yPos, boldPaint)
+            yPos += 13f
+        }
+
+        canvas.drawLine(startX, yPos, endX, yPos, linePaint)
+        yPos += 12f
+
+        canvas.drawText("Subtotal:", startX + 30f, yPos, regularPaint)
+        canvas.drawText("₹${String.format(Locale.US, "%.2f", order.subtotal)}", endX - 38f, yPos, regularPaint)
+        yPos += 12f
+
+        if (order.discount > 0) {
+            canvas.drawText("Discount:", startX + 30f, yPos, regularPaint)
+            canvas.drawText("-₹${String.format(Locale.US, "%.2f", order.discount)}", endX - 38f, yPos, regularPaint)
+            yPos += 12f
+        }
+
+        canvas.drawText("GST (5%):", startX + 30f, yPos, regularPaint)
+        canvas.drawText("₹${String.format(Locale.US, "%.2f", order.taxAmount)}", endX - 38f, yPos, regularPaint)
+        yPos += 14f
+
+        canvas.drawLine(startX, yPos, endX, yPos, linePaint)
+        yPos += 14f
+
+        canvas.drawText("TOTAL:", startX + 30f, yPos, titlePaint)
+        canvas.drawText("₹${String.format(Locale.US, "%.2f", order.totalAmount)}", endX - 42f, yPos, titlePaint)
+        yPos += 20f
+
+        canvas.drawText("*** THANK YOU FOR VISITING ***", centerX, yPos, centerPaint)
+        yPos += 12f
+        canvas.drawText("Powered by AstraCognix Solution", centerX, yPos, centerGoldPaint)
+        yPos += 10f
+        canvas.drawText("www.astracognixsolutions.in", centerX, yPos, centerPaint)
+
+        pdfDocument.finishPage(page)
+
+        return try {
+            val file = File(context.cacheDir, "SwadSutra_ThermalReceipt_${order.orderNumber}.pdf")
             val outputStream = FileOutputStream(file)
             pdfDocument.writeTo(outputStream)
             pdfDocument.close()
@@ -271,17 +400,28 @@ object PdfInvoiceGenerator {
             strokeWidth = 1.5f
         }
 
-        var yPos = 40f
+        var yPos = 35f
         val startX = 35f
         val endX = 560f
 
+        // Top Logo image for Master Orders report
+        try {
+            val logoBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.img_swad_sutra_logo)
+            if (logoBitmap != null) {
+                val logoRect = RectF(startX, yPos, startX + 45f, yPos + 45f)
+                canvas.drawBitmap(logoBitmap, null, logoRect, null)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         // Header
-        canvas.drawText("SWAD SUTRA FINE DINING", startX, yPos, titlePaint)
+        canvas.drawText("SWAD SUTRA FINE DINING", startX + 55f, yPos + 22f, titlePaint)
         val gstinStr = if (config.gstin.isNotBlank()) config.gstin else "07AAAAA0000A1Z5"
-        canvas.drawText("GSTIN: $gstinStr", 390f, yPos, subTitlePaint)
+        canvas.drawText("GSTIN: $gstinStr", 390f, yPos + 22f, subTitlePaint)
+        yPos += 38f
+        canvas.drawText("MASTER ORDERS HISTORY & SALES TAX REPORT", startX + 55f, yPos, subTitlePaint)
         yPos += 18f
-        canvas.drawText("MASTER ORDERS HISTORY & SALES TAX REPORT", startX, yPos, subTitlePaint)
-        yPos += 14f
         val generatedAt = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date())
         canvas.drawText("Generated On: $generatedAt  |  Total Orders: ${orders.size}", startX, yPos, headerPaint)
         yPos += 18f
@@ -317,7 +457,7 @@ object PdfInvoiceGenerator {
         for (order in orders) {
             if (yPos > 760f) {
                 // Page Footer
-                canvas.drawText("Page $pageNum • Developed by AstraCognix Solution", startX, 810f, headerPaint)
+                canvas.drawText("Page $pageNum • Developed by AstraCognix Solution (www.astracognixsolutions.in)", startX, 810f, headerPaint)
                 pdfDocument.finishPage(page)
 
                 pageNum++
@@ -361,7 +501,7 @@ object PdfInvoiceGenerator {
         }
         canvas.drawText("Swad Sutra Fine Dining • Official Sales Report (GSTIN: $gstinStr)", startX, yPos, headerPaint)
         yPos += 15f
-        canvas.drawText("Software Developed & Powered by AstraCognix Solution • www.astracognix.com", startX, yPos, footerCreditPaint)
+        canvas.drawText("Software Developed & Powered by AstraCognix Solution • www.astracognixsolutions.in", startX, yPos, footerCreditPaint)
 
         pdfDocument.finishPage(page)
 
@@ -379,3 +519,4 @@ object PdfInvoiceGenerator {
         }
     }
 }
+

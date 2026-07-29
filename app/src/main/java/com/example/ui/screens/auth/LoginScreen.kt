@@ -111,13 +111,33 @@ fun LoginScreen(viewModel: PosViewModel) {
                     )
                 }
                 Text(
-                    text = "Luxury Fine Dining & POS",
+                    text = "Staff Terminal Access & POS Security",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Medium
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF2E7D32).copy(alpha = 0.12f))
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Lock, contentDescription = "Encrypted", tint = Color(0xFF2E7D32), modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "SHA-256 Local Encrypted Storage Active",
+                            color = Color(0xFF2E7D32),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
 
                 // PIN Mask Display
                 Row(
@@ -133,7 +153,7 @@ fun LoginScreen(viewModel: PosViewModel) {
                                 .size(20.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (isFilled) MaterialTheme.colorScheme.primary
+                                    if (isFilled) Color(0xFFC62828)
                                     else MaterialTheme.colorScheme.surfaceVariant
                                 )
                         )

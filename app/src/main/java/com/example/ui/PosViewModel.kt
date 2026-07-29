@@ -56,12 +56,12 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
         var success = false
         viewModelScope.launch {
             val user = repository.getUserByPin(pin)
-            if (user != null) {
+            if (user != null && com.example.domain.util.SecurePinStorage.verifyStaffPin(getApplication(), user.id, pin, defaultPin = user.pin)) {
                 _currentUser.value = user
                 _loginError.value = null
                 success = true
             } else {
-                _loginError.value = "Invalid PIN. Try 1234 (Admin), 0000 (Cashier), 1111 (Waiter), 2222 (Kitchen)."
+                _loginError.value = "Invalid Staff PIN. Verified by Encrypted Local Storage."
             }
         }
         return success
