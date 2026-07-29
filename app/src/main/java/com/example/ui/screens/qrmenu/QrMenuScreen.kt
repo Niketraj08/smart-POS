@@ -21,23 +21,36 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.RestaurantMenu
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -54,6 +67,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
+import com.example.domain.model.CustomerModel
+import com.example.domain.model.TableStatus
 import com.example.domain.util.QrCodeGenerator
 import com.example.ui.PosViewModel
 import com.example.ui.components.CameraQrScanner
@@ -67,7 +82,14 @@ fun QrMenuScreen(viewModel: PosViewModel) {
     var selectedQrTypeIndex by remember { mutableStateOf(0) }
     var manualQrInput by remember { mutableStateOf("") }
     var scanFeedbackMessage by remember { mutableStateOf<String?>(null) }
-    var scannedTableNumber by remember { mutableStateOf<String?>(null) }
+    
+    // Scanner Form Fields
+    var scannedTableNumber by remember { mutableStateOf("T-01") }
+    var isVipGuest by remember { mutableStateOf(false) }
+    var guestName by remember { mutableStateOf("") }
+    var guestCount by remember { mutableIntStateOf(2) }
+    var diningNotes by remember { mutableStateOf("") }
+    var isDetailsFormOpen by remember { mutableStateOf(false) }
 
     val currentTable = tables.getOrNull(selectedTableIndex)
 
@@ -313,7 +335,9 @@ fun QrMenuScreen(viewModel: PosViewModel) {
             @Composable
             fun ScannerContent() {
                 ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("qr_scanner_details_card"),
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
@@ -322,37 +346,68 @@ fun QrMenuScreen(viewModel: PosViewModel) {
                             .fillMaxWidth()
                             .padding(16.dp)
                     ) {
-                        Text(
-                            text = "CameraX ML Kit Live Viewfinder",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Point camera at any table standee or phone QR code to decode",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "CameraX ML Kit Live Viewfinder",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Point camera at table standee or phone QR to auto-fill details",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                            if (isVipGuest) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Color(0xFFD4AF37))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Star, contentDescription = "VIP", tint = Color.Black, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("VIP TABLE", color = Color.Black, fontWeight = FontWeight.ExtraBold, fontSize = 10.sp)
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(if (isCompact) 220.dp else 260.dp)
-                                .clip(RoundedCornerShape(20.dp))
+                                .height(if (isCompact) 200.dp else 240.dp)
+                                .clip(RoundedCornerShape(18.dp))
                         ) {
                             CameraQrScanner(
                                 onQrCodeScanned = { qrText ->
                                     manualQrInput = qrText
-                                    scanFeedbackMessage = "QR Scanned by ML Kit: $qrText"
+                                    scanFeedbackMessage = "Scanned: $qrText"
 
-                                    if (qrText.contains("T-")) {
+                                    // Extract table number if present
+                                    val regex = Regex("(?i)table[=_:]?([A-Za-z0-9-]+)")
+                                    val match = regex.find(qrText)
+                                    if (match != null) {
+                                        scannedTableNumber = match.groupValues[1].uppercase()
+                                    } else if (qrText.contains("T-")) {
                                         val matchedTable = tables.find { qrText.contains(it.tableNumber) }
                                         if (matchedTable != null) {
                                             scannedTableNumber = matchedTable.tableNumber
-                                            viewModel.selectTable(matchedTable)
                                         }
                                     }
+                                    if (qrText.contains("VIP", ignoreCase = true)) {
+                                        isVipGuest = true
+                                    }
+                                    isDetailsFormOpen = true
                                 },
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -362,70 +417,169 @@ fun QrMenuScreen(viewModel: PosViewModel) {
 
                         OutlinedTextField(
                             value = manualQrInput,
-                            onValueChange = { manualQrInput = it },
+                            onValueChange = { input ->
+                                manualQrInput = input
+                                if (input.contains("T-") || input.contains("TABLE", ignoreCase = true)) {
+                                    isDetailsFormOpen = true
+                                }
+                            },
                             label = { Text("Scanned QR Code String") },
-                            placeholder = { Text("e.g. TABLE:T-02") },
+                            placeholder = { Text("e.g. https://smartpos.menu/dine-in?table=T-02") },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("qr_scan_input")
                         )
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                        Button(
-                            onClick = {
-                                if (manualQrInput.isNotBlank()) {
-                                    scanFeedbackMessage = "Processing QR: $manualQrInput"
-                                    val matchedTable = tables.find { manualQrInput.contains(it.tableNumber) }
-                                    if (matchedTable != null) {
-                                        scannedTableNumber = matchedTable.tableNumber
-                                        viewModel.selectTable(matchedTable)
-                                        viewModel.navigateTo("orders")
-                                    } else {
-                                        scanFeedbackMessage = "Scanned payload verified: $manualQrInput"
-                                    }
-                                }
-                            },
+                        // --- SCANNED TABLE & GUEST DETAILS FORM ---
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .testTag("qr_process_btn")
+                                .border(1.5.dp, Color(0xFF8C1D11).copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
-                            Text("Open Register for Scanned Table")
-                        }
-
-                        scannedTableNumber?.let { tNum ->
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Card(
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
                                 Row(
-                                    modifier = Modifier
-                                        .padding(12.dp)
-                                        .fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "Table $tNum Selected!",
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                        Text(
-                                            text = "Ready in Register module",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                        )
-                                    }
+                                    Text(
+                                        text = "Scanned Table & Guest Registration",
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 14.sp,
+                                        color = Color(0xFF8C1D11)
+                                    )
 
-                                    Button(
-                                        onClick = { viewModel.navigateTo("orders") },
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                                    ) {
-                                        Text("Go to Register", fontSize = 12.sp)
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("VIP Table", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Switch(
+                                            checked = isVipGuest,
+                                            onCheckedChange = { isVipGuest = it },
+                                            colors = SwitchDefaults.colors(
+                                                checkedThumbColor = Color.White,
+                                                checkedTrackColor = Color(0xFFD4AF37)
+                                            ),
+                                            modifier = Modifier.testTag("vip_guest_switch")
+                                        )
                                     }
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = scannedTableNumber,
+                                        onValueChange = { scannedTableNumber = it },
+                                        label = { Text("Table Number") },
+                                        placeholder = { Text("e.g. T-01") },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .testTag("scanned_table_field"),
+                                        singleLine = true
+                                    )
+
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(top = 4.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text("Guest Count (Log)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center,
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(MaterialTheme.colorScheme.surface)
+                                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                        ) {
+                                            IconButton(
+                                                onClick = { if (guestCount > 1) guestCount-- },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(Icons.Default.Remove, contentDescription = "Decrease", modifier = Modifier.size(16.dp))
+                                            }
+                                            Text(
+                                                text = "$guestCount",
+                                                fontWeight = FontWeight.ExtraBold,
+                                                fontSize = 15.sp,
+                                                modifier = Modifier.padding(horizontal = 10.dp)
+                                            )
+                                            IconButton(
+                                                onClick = { guestCount++ },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(16.dp))
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                OutlinedTextField(
+                                    value = guestName,
+                                    onValueChange = { guestName = it },
+                                    label = { Text("Guest / Customer Name") },
+                                    placeholder = { Text("e.g. Niket Raj / Walk-in") },
+                                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF8C1D11)) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("scanned_guest_name_field"),
+                                    singleLine = true
+                                )
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                OutlinedTextField(
+                                    value = diningNotes,
+                                    onValueChange = { diningNotes = it },
+                                    label = { Text("Special Dining Requests / Notes") },
+                                    placeholder = { Text("e.g. Birthday Celebration / AC Seating") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
+                                )
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                Button(
+                                    onClick = {
+                                        val matchedTable = tables.find { it.tableNumber.equals(scannedTableNumber, ignoreCase = true) }
+                                        if (matchedTable != null) {
+                                            viewModel.selectTable(matchedTable)
+                                            viewModel.updateTableStatus(matchedTable.id, TableStatus.OCCUPIED)
+                                        }
+                                        val finalCustomerName = if (guestName.isNotBlank()) guestName else "Guest (${scannedTableNumber})"
+                                        val customerModel = CustomerModel(
+                                            id = System.currentTimeMillis().toInt(),
+                                            name = finalCustomerName,
+                                            phone = "9876543210",
+                                            email = "",
+                                            loyaltyPoints = if (isVipGuest) 100 else 10,
+                                            totalSpent = 0.0
+                                        )
+                                        viewModel.selectCustomer(customerModel)
+                                        scanFeedbackMessage = "Table $scannedTableNumber (${if (isVipGuest) "VIP" else "Regular"}) with $guestCount guests saved! Opening Menu..."
+                                        viewModel.navigateTo("orders")
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(50.dp)
+                                        .testTag("enter_open_menu_btn"),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8C1D11))
+                                ) {
+                                    Icon(Icons.Default.RestaurantMenu, contentDescription = "Menu", tint = Color.White)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("ENTER & OPEN MENU", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
                                 }
                             }
                         }
