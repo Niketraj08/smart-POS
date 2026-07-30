@@ -87,9 +87,77 @@ fun QrMenuScreen(viewModel: PosViewModel) {
     var scannedTableNumber by remember { mutableStateOf("T-01") }
     var isVipGuest by remember { mutableStateOf(false) }
     var guestName by remember { mutableStateOf("") }
+    var guestPhone by remember { mutableStateOf("") }
     var guestCount by remember { mutableIntStateOf(2) }
     var diningNotes by remember { mutableStateOf("") }
     var isDetailsFormOpen by remember { mutableStateOf(false) }
+
+    fun processQrString(qrText: String) {
+        manualQrInput = qrText
+        scanFeedbackMessage = "Scanned payload: $qrText"
+
+        // 1. Try URL parameter extraction (e.g. https://swadsutra.app/menu?table=T-03&name=Niket&vip=true&guests=4&phone=9876543210)
+        var extractedTable = ""
+        var extractedName = ""
+        var extractedVip = false
+        var extractedPax = 2
+        var extractedPhone = ""
+
+        try {
+            if (qrText.contains("?") || qrText.contains("&") || qrText.contains("=")) {
+                val queryParams = qrText.substringAfter("?", qrText)
+                val pairs = queryParams.split("&")
+                for (pair in pairs) {
+                    val parts = pair.split("=")
+                    if (parts.size == 2) {
+                        val key = parts[0].lowercase().trim()
+                        val value = try { java.net.URLDecoder.decode(parts[1], "UTF-8").trim() } catch (e: Exception) { parts[1].trim() }
+                        when {
+                            key in listOf("table", "tbl", "t", "tablenumber") -> extractedTable = value.uppercase()
+                            key in listOf("name", "guest", "customer", "user") -> extractedName = value
+                            key in listOf("vip", "is_vip", "premium") -> extractedVip = value.lowercase() in listOf("true", "1", "yes")
+                            key in listOf("guests", "pax", "count", "people") -> extractedPax = value.toIntOrNull() ?: 2
+                            key in listOf("phone", "mobile", "tel") -> extractedPhone = value
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // 2. Regex fallbacks for unstructured text
+        if (extractedTable.isBlank()) {
+            val tableMatch = Regex("(?i)(?:table|tbl|t)[=_:\\s]*([A-Za-z0-9-]+)").find(qrText)
+            if (tableMatch != null) {
+                extractedTable = tableMatch.groupValues[1].uppercase()
+            } else if (qrText.contains("T-", ignoreCase = true)) {
+                val matched = Regex("(?i)T-\\d+").find(qrText)
+                if (matched != null) extractedTable = matched.value.uppercase()
+            }
+        }
+
+        if (extractedName.isBlank()) {
+            val nameMatch = Regex("(?i)(?:name|guest|customer)[=_:\\s]*([A-Za-z\\s]+)").find(qrText)
+            if (nameMatch != null) extractedName = nameMatch.groupValues[1].trim()
+        }
+
+        if (!extractedVip && qrText.contains("VIP", ignoreCase = true)) {
+            extractedVip = true
+        }
+
+        if (extractedPhone.isBlank()) {
+            val phoneMatch = Regex("\\b\\d{10}\\b").find(qrText)
+            if (phoneMatch != null) extractedPhone = phoneMatch.value
+        }
+
+        if (extractedTable.isNotBlank()) scannedTableNumber = extractedTable
+        if (extractedName.isNotBlank()) guestName = extractedName
+        if (extractedPhone.isNotBlank()) guestPhone = extractedPhone
+        isVipGuest = extractedVip
+        guestCount = extractedPax
+        isDetailsFormOpen = true
+    }
 
     val currentTable = tables.getOrNull(selectedTableIndex)
 
@@ -390,24 +458,7 @@ fun QrMenuScreen(viewModel: PosViewModel) {
                         ) {
                             CameraQrScanner(
                                 onQrCodeScanned = { qrText ->
-                                    manualQrInput = qrText
-                                    scanFeedbackMessage = "Scanned: $qrText"
-
-                                    // Extract table number if present
-                                    val regex = Regex("(?i)table[=_:]?([A-Za-z0-9-]+)")
-                                    val match = regex.find(qrText)
-                                    if (match != null) {
-                                        scannedTableNumber = match.groupValues[1].uppercase()
-                                    } else if (qrText.contains("T-")) {
-                                        val matchedTable = tables.find { qrText.contains(it.tableNumber) }
-                                        if (matchedTable != null) {
-                                            scannedTableNumber = matchedTable.tableNumber
-                                        }
-                                    }
-                                    if (qrText.contains("VIP", ignoreCase = true)) {
-                                        isVipGuest = true
-                                    }
-                                    isDetailsFormOpen = true
+                                    processQrString(qrText)
                                 },
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -418,13 +469,10 @@ fun QrMenuScreen(viewModel: PosViewModel) {
                         OutlinedTextField(
                             value = manualQrInput,
                             onValueChange = { input ->
-                                manualQrInput = input
-                                if (input.contains("T-") || input.contains("TABLE", ignoreCase = true)) {
-                                    isDetailsFormOpen = true
-                                }
+                                processQrString(input)
                             },
-                            label = { Text("Scanned QR Code String") },
-                            placeholder = { Text("e.g. https://smartpos.menu/dine-in?table=T-02") },
+                            label = { Text("Scanned QR Code String / Phone Link") },
+                            placeholder = { Text("e.g. https://swadsutra.app/menu?table=T-02&name=Niket&vip=true&phone=9876543210") },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("qr_scan_input")
@@ -525,17 +573,33 @@ fun QrMenuScreen(viewModel: PosViewModel) {
 
                                 Spacer(modifier = Modifier.height(10.dp))
 
-                                OutlinedTextField(
-                                    value = guestName,
-                                    onValueChange = { guestName = it },
-                                    label = { Text("Guest / Customer Name") },
-                                    placeholder = { Text("e.g. Niket Raj / Walk-in") },
-                                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF8C1D11)) },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .testTag("scanned_guest_name_field"),
-                                    singleLine = true
-                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = guestName,
+                                        onValueChange = { guestName = it },
+                                        label = { Text("Guest / Customer Name") },
+                                        placeholder = { Text("e.g. Niket Raj") },
+                                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF8C1D11)) },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .testTag("scanned_guest_name_field"),
+                                        singleLine = true
+                                    )
+
+                                    OutlinedTextField(
+                                        value = guestPhone,
+                                        onValueChange = { guestPhone = it },
+                                        label = { Text("Mobile Number") },
+                                        placeholder = { Text("e.g. 9876543210") },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .testTag("scanned_guest_phone_field"),
+                                        singleLine = true
+                                    )
+                                }
 
                                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -558,10 +622,11 @@ fun QrMenuScreen(viewModel: PosViewModel) {
                                             viewModel.updateTableStatus(matchedTable.id, TableStatus.OCCUPIED)
                                         }
                                         val finalCustomerName = if (guestName.isNotBlank()) guestName else "Guest (${scannedTableNumber})"
+                                        val finalPhone = if (guestPhone.isNotBlank()) guestPhone else "9876543210"
                                         val customerModel = CustomerModel(
                                             id = System.currentTimeMillis().toInt(),
                                             name = finalCustomerName,
-                                            phone = "9876543210",
+                                            phone = finalPhone,
                                             email = "",
                                             loyaltyPoints = if (isVipGuest) 100 else 10,
                                             totalSpent = 0.0

@@ -73,6 +73,7 @@ fun OrderRegisterScreen(viewModel: PosViewModel) {
     val cart by viewModel.cart.collectAsState()
     val orderType by viewModel.orderType.collectAsState()
     val selectedTable by viewModel.selectedTable.collectAsState()
+    val selectedCustomer by viewModel.selectedCustomer.collectAsState()
     val discount by viewModel.discountAmount.collectAsState()
     val config by viewModel.restaurantConfig.collectAsState()
 
@@ -116,6 +117,74 @@ fun OrderRegisterScreen(viewModel: PosViewModel) {
                                 .fillMaxSize()
                                 .padding(12.dp)
                         ) {
+                            // --- Active Scanned Phone & Table Details Session Banner ---
+                            if (selectedTable != null || selectedCustomer != null) {
+                                Card(
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF8C1D11).copy(alpha = 0.08f)),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 8.dp)
+                                        .border(1.dp, Color(0xFF8C1D11).copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFF8C1D11))
+                                                    .padding(6.dp)
+                                            ) {
+                                                Icon(Icons.Default.TableBar, contentDescription = "Table", tint = Color.White, modifier = Modifier.size(16.dp))
+                                            }
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Column {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Text(
+                                                        text = "Table: ${selectedTable?.tableNumber ?: "T-01"}",
+                                                        fontWeight = FontWeight.ExtraBold,
+                                                        fontSize = 13.sp,
+                                                        color = Color(0xFF8C1D11)
+                                                    )
+                                                    if ((selectedCustomer?.loyaltyPoints ?: 0) >= 100) {
+                                                        Spacer(modifier = Modifier.width(6.dp))
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .clip(RoundedCornerShape(6.dp))
+                                                                .background(Color(0xFFD4AF37))
+                                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        ) {
+                                                            Text("VIP GUEST", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 9.sp)
+                                                        }
+                                                    }
+                                                }
+                                                Text(
+                                                    text = "Guest: ${selectedCustomer?.name ?: "Walk-in Guest"} • Mobile: ${selectedCustomer?.phone ?: "Not set"}",
+                                                    fontSize = 11.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+
+                                        IconButton(
+                                            onClick = {
+                                                viewModel.selectTable(null)
+                                                viewModel.selectCustomer(null)
+                                            },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Clear", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                }
+                            }
+
                             // Search & Table Badge
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -130,23 +199,6 @@ fun OrderRegisterScreen(viewModel: PosViewModel) {
                                     modifier = Modifier.weight(1f).testTag("pos_search_input"),
                                     singleLine = true
                                 )
-
-                                if (selectedTable != null) {
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Card(
-                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                                        shape = RoundedCornerShape(12.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(Icons.Default.TableBar, contentDescription = "Table", modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("T${selectedTable?.tableNumber}", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                                        }
-                                    }
-                                }
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -358,6 +410,73 @@ fun OrderRegisterScreen(viewModel: PosViewModel) {
                         .fillMaxHeight()
                         .padding(16.dp)
                 ) {
+                    // --- Active Scanned Phone & Table Details Session Banner ---
+                    if (selectedTable != null || selectedCustomer != null) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF8C1D11).copy(alpha = 0.08f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp)
+                                .border(1.dp, Color(0xFF8C1D11).copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(horizontal = 14.dp, vertical = 10.dp)
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF8C1D11))
+                                            .padding(8.dp)
+                                    ) {
+                                        Icon(Icons.Default.TableBar, contentDescription = "Table", tint = Color.White, modifier = Modifier.size(18.dp))
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = "Table: ${selectedTable?.tableNumber ?: "T-01"}",
+                                                fontWeight = FontWeight.ExtraBold,
+                                                fontSize = 14.sp,
+                                                color = Color(0xFF8C1D11)
+                                            )
+                                            if ((selectedCustomer?.loyaltyPoints ?: 0) >= 100) {
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Box(
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(6.dp))
+                                                        .background(Color(0xFFD4AF37))
+                                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                                ) {
+                                                    Text("VIP GUEST", color = Color.Black, fontWeight = FontWeight.ExtraBold, fontSize = 10.sp)
+                                                }
+                                            }
+                                        }
+                                        Text(
+                                            text = "Guest Name: ${selectedCustomer?.name ?: "Walk-in Guest"} • Mobile: ${selectedCustomer?.phone ?: "Not set"}",
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        viewModel.selectTable(null)
+                                        viewModel.selectCustomer(null)
+                                    }
+                                ) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Clear", tint = Color.Gray)
+                                }
+                            }
+                        }
+                    }
+
                     // Search & Category Bar
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -372,23 +491,6 @@ fun OrderRegisterScreen(viewModel: PosViewModel) {
                             modifier = Modifier.weight(1f).testTag("pos_search_input"),
                             singleLine = true
                         )
-
-                        if (selectedTable != null) {
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Card(
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Default.TableBar, contentDescription = "Table", modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Table: ${selectedTable?.tableNumber}", fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))

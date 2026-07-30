@@ -99,7 +99,7 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedTable = MutableStateFlow<TableInfo?>(null)
     val selectedTable: StateFlow<TableInfo?> = _selectedTable.asStateFlow()
 
-    fun selectTable(table: TableInfo) {
+    fun selectTable(table: TableInfo?) {
         _selectedTable.value = table
     }
 
