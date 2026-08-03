@@ -24,12 +24,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.TableBar
+import com.example.ui.components.VoiceOrderAssistantDialog
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -78,6 +81,7 @@ fun OrderRegisterScreen(viewModel: PosViewModel) {
     val config by viewModel.restaurantConfig.collectAsState()
 
     var showDiscountDialog by remember { mutableStateOf(false) }
+    var showVoiceDialog by remember { mutableStateOf(false) }
     var itemForNotes by remember { mutableStateOf<CartItem?>(null) }
     var selectedMobileTab by remember { mutableStateOf(0) } // 0: Menu, 1: Cart
 
@@ -185,7 +189,7 @@ fun OrderRegisterScreen(viewModel: PosViewModel) {
                                 }
                             }
 
-                            // Search & Table Badge
+                            // Search & Table Badge & AI Voice Button
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -199,6 +203,19 @@ fun OrderRegisterScreen(viewModel: PosViewModel) {
                                     modifier = Modifier.weight(1f).testTag("pos_search_input"),
                                     singleLine = true
                                 )
+
+                                Spacer(modifier = Modifier.width(6.dp))
+
+                                Button(
+                                    onClick = { showVoiceDialog = true },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8C1D11)),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.height(54.dp).testTag("open_voice_order_button")
+                                ) {
+                                    Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Voice", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -477,7 +494,7 @@ fun OrderRegisterScreen(viewModel: PosViewModel) {
                         }
                     }
 
-                    // Search & Category Bar
+                    // Search & Category Bar with AI Voice Button
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -491,6 +508,19 @@ fun OrderRegisterScreen(viewModel: PosViewModel) {
                             modifier = Modifier.weight(1f).testTag("pos_search_input"),
                             singleLine = true
                         )
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Button(
+                            onClick = { showVoiceDialog = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8C1D11)),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.height(54.dp).testTag("open_voice_order_button_expanded")
+                        ) {
+                            Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("AI Voice Order", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -733,6 +763,14 @@ fun OrderRegisterScreen(viewModel: PosViewModel) {
             dismissButton = {
                 TextButton(onClick = { showDiscountDialog = false }) { Text("Cancel") }
             }
+        )
+    }
+
+    // Gemini AI Voice Order Dialog
+    if (showVoiceDialog) {
+        VoiceOrderAssistantDialog(
+            viewModel = viewModel,
+            onDismiss = { showVoiceDialog = false }
         )
     }
 }
