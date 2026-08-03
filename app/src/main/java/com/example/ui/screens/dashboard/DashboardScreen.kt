@@ -82,7 +82,9 @@ import com.example.R
 import com.example.domain.model.OrderStatus
 import com.example.domain.model.TableInfo
 import com.example.domain.model.TableStatus
+import com.example.domain.model.TableServiceRequest
 import com.example.domain.model.User
+import com.example.domain.model.UserRole
 import com.example.domain.model.RestaurantConfig
 import com.example.domain.util.QrCodeGenerator
 import com.example.ui.PosViewModel
@@ -1130,6 +1132,430 @@ private fun MetricGradientCard(
                     fontSize = 9.sp,
                     color = Color.White.copy(alpha = 0.9f)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminActiveUsersSection(
+    currentUser: User?,
+    serviceRequests: List<TableServiceRequest>,
+    onDismissRequest: (String) -> Unit
+) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Shield,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Active Sessions & User Roles",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2E7D32).copy(alpha = 0.15f)),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF2E7D32))
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Live Role Access Control",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1B5E20)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Admin Session Card
+                Card(
+                    modifier = Modifier.weight(1f),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.AdminPanelSettings, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Logged-In Admin", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(currentUser?.name ?: "Sarah Jenkins (Admin)", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Text("Role: ${currentUser?.role?.displayName ?: "Admin / Manager"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(12.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Full POS, KDS & Analytics Access", fontSize = 10.sp, color = Color(0xFF2E7D32), fontWeight = FontWeight.Medium)
+                        }
+                    }
+                }
+
+                // Customer Access Scope Card
+                Card(
+                    modifier = Modifier.weight(1f),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF8C1D11).copy(alpha = 0.08f)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.People, contentDescription = null, tint = Color(0xFF8C1D11), modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Logged-In Customer Portal", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF8C1D11))
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text("Customer Access Constraint", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Text("Restricted to Customer Portion only", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = Color(0xFF8C1D11), modifier = Modifier.size(12.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Menu, QR Scanner, Loyalty & Requests", fontSize = 10.sp, color = Color(0xFF8C1D11), fontWeight = FontWeight.Medium)
+                        }
+                    }
+                }
+            }
+
+            if (serviceRequests.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("Live Table Service Requests from Customers:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF8C1D11))
+                Spacer(modifier = Modifier.height(6.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    serviceRequests.forEach { req ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = Color(0xFFE65100), modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("${req.tableNumber} - ${req.customerName}: ", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                    Text(req.serviceType, fontSize = 11.sp, color = Color(0xFFE65100), fontWeight = FontWeight.SemiBold)
+                                }
+
+                                Button(
+                                    onClick = { onDismissRequest(req.id) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                    modifier = Modifier.height(26.dp)
+                                ) {
+                                    Text("Resolve", fontSize = 10.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CustomerDashboardView(
+    viewModel: PosViewModel,
+    currentUser: User?,
+    config: RestaurantConfig,
+    orders: List<com.example.domain.model.OrderSummary>,
+    tables: List<TableInfo>,
+    isForcedByAdmin: Boolean,
+    onToggleAdminView: () -> Unit
+) {
+    var selectedServiceType by remember { mutableStateOf<String?>(null) }
+    var serviceRequestSent by remember { mutableStateOf(false) }
+    val selectedTableNum = "T-01"
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(1),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        if (isForcedByAdmin) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFB300))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Previewing Customer View Mode", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFFE65100))
+                        Button(
+                            onClick = onToggleAdminView,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8C1D11)),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.height(30.dp)
+                        ) {
+                            Text("Return to Admin View", fontSize = 11.sp)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Welcome Customer Banner Card
+        item {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = Color(0xFF8C1D11))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("VIP Loyalty Guest", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Welcome, ${currentUser?.name ?: "Valued Customer"}!",
+                                color = Color.White,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 22.sp
+                            )
+                            Text(
+                                text = "Table $selectedTableNum • ${config.restaurantName}",
+                                color = Color.White.copy(alpha = 0.8f),
+                                fontSize = 13.sp
+                            )
+                        }
+
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.2f)),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("Loyalty Points", color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp)
+                                Text("240", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+                                Text("Tier: Gold", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Table Assistance / Service Request Buttons
+        item {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Call, contentDescription = null, tint = Color(0xFF8C1D11), modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Call Waiter & Table Service", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    Text("Instant alert sent directly to staff smart POS terminals", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val options = listOf("Water Refill", "Call Waiter", "Request Bill", "Need Cutlery", "Clean Table")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        options.take(3).forEach { option ->
+                            Button(
+                                onClick = {
+                                    selectedServiceType = option
+                                    viewModel.sendTableServiceRequest(selectedTableNum, currentUser?.name ?: "Customer", option)
+                                    serviceRequestSent = true
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(option, fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        options.drop(3).forEach { option ->
+                            Button(
+                                onClick = {
+                                    selectedServiceType = option
+                                    viewModel.sendTableServiceRequest(selectedTableNum, currentUser?.name ?: "Customer", option)
+                                    serviceRequestSent = true
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(option, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSecondaryContainer, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    if (serviceRequestSent && selectedServiceType != null) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Service Request '$selectedServiceType' sent to staff for Table $selectedTableNum!", fontSize = 11.sp, color = Color(0xFF1B5E20), fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Customer Quick Action Portal
+        item {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Customer Portal Actions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Card(
+                            onClick = { viewModel.navigateTo("orders") },
+                            modifier = Modifier.weight(1f).height(90.dp).testTag("customer_action_menu"),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF8C1D11).copy(alpha = 0.1f))
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(12.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(Icons.Default.LocalDining, contentDescription = null, tint = Color(0xFF8C1D11))
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Digital Menu & Order", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF8C1D11))
+                            }
+                        }
+
+                        Card(
+                            onClick = { viewModel.navigateTo("qrmenu") },
+                            modifier = Modifier.weight(1f).height(90.dp).testTag("customer_action_qr"),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(12.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(Icons.Default.QrCode, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Scan Table QR", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Card(
+                            onClick = { viewModel.navigateTo("history") },
+                            modifier = Modifier.weight(1f).height(90.dp).testTag("customer_action_history"),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f))
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(12.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(Icons.Default.Receipt, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("My Receipts", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary)
+                            }
+                        }
+
+                        Card(
+                            onClick = { viewModel.navigateTo("customers") },
+                            modifier = Modifier.weight(1f).height(90.dp).testTag("customer_action_loyalty"),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(12.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFE65100))
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Loyalty Rewards", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFFE65100))
+                            }
+                        }
+                    }
+                }
             }
         }
     }
