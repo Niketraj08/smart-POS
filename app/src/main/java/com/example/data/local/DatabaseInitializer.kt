@@ -25,7 +25,9 @@ object DatabaseInitializer {
                     UserEntity("u1", "Sarah Jenkins (Manager)", "ADMIN", "1234", "sarah@smartpos.com", "+1 555-0101"),
                     UserEntity("u2", "Alex Rivera (Cashier)", "CASHIER", "0000", "alex@smartpos.com", "+1 555-0102"),
                     UserEntity("u3", "David Kim (Captain Waiter)", "WAITER", "1111", "david@smartpos.com", "+1 555-0103"),
-                    UserEntity("u4", "Chef Marco (Kitchen Head)", "KITCHEN_STAFF", "2222", "marco@smartpos.com", "+1 555-0104")
+                    UserEntity("u4", "Chef Marco (Kitchen Head)", "KITCHEN_STAFF", "2222", "marco@smartpos.com", "+1 555-0104"),
+                    UserEntity("u5", "Niket Raj (Customer)", "CUSTOMER", "7777", "niket@customer.com", "+1 555-9876"),
+                    UserEntity("u6", "Priya Sharma (VIP Customer)", "CUSTOMER", "8888", "priya@customer.com", "+1 555-5432")
                 )
                 users.forEach { db.userDao().insertUser(it) }
 

@@ -231,26 +231,33 @@ fun LoginScreen(viewModel: PosViewModel) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Button(
                         onClick = { viewModel.loginWithPin("1234") },
                         modifier = Modifier.weight(1f).testTag("quick_admin_login")
                     ) {
-                        Text("Admin", fontSize = 11.sp)
+                        Text("Admin", fontSize = 10.sp)
                     }
                     Button(
                         onClick = { viewModel.loginWithPin("0000") },
                         modifier = Modifier.weight(1f).testTag("quick_cashier_login")
                     ) {
-                        Text("Cashier", fontSize = 11.sp)
+                        Text("Cashier", fontSize = 10.sp)
                     }
                     Button(
                         onClick = { viewModel.loginWithPin("1111") },
                         modifier = Modifier.weight(1f).testTag("quick_waiter_login")
                     ) {
-                        Text("Waiter", fontSize = 11.sp)
+                        Text("Waiter", fontSize = 10.sp)
+                    }
+                    Button(
+                        onClick = { viewModel.loginAsCustomer("Niket Raj", "+1 555-9876") },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF8C1D11)),
+                        modifier = Modifier.weight(1.2f).testTag("quick_customer_login")
+                    ) {
+                        Text("Customer", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 

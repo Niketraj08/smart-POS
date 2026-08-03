@@ -4,8 +4,17 @@ enum class UserRole(val displayName: String) {
     ADMIN("Admin / Manager"),
     CASHIER("Cashier"),
     WAITER("Waiter / Captain"),
-    KITCHEN_STAFF("Kitchen Staff")
+    KITCHEN_STAFF("Kitchen Staff"),
+    CUSTOMER("Customer / Guest")
 }
+
+data class TableServiceRequest(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val tableNumber: String,
+    val customerName: String,
+    val serviceType: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
 
 enum class TableStatus(val label: String) {
     AVAILABLE("Available"),

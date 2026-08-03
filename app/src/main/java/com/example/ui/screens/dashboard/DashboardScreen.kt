@@ -25,18 +25,29 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Kitchen
+import androidx.compose.material.icons.filled.LocalDining
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.TableBar
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -93,6 +104,25 @@ fun DashboardScreen(viewModel: PosViewModel) {
     val tables by viewModel.tables.collectAsState()
     val kitchenOrders by viewModel.kitchenOrders.collectAsState()
     val config by viewModel.restaurantConfig.collectAsState()
+    val serviceRequests by viewModel.serviceRequests.collectAsState()
+
+    var forceCustomerViewMode by remember { mutableStateOf(false) }
+
+    val isCustomerRole = currentUser?.role == UserRole.CUSTOMER
+    val isCustomerView = isCustomerRole || forceCustomerViewMode
+
+    if (isCustomerView) {
+        CustomerDashboardView(
+            viewModel = viewModel,
+            currentUser = currentUser,
+            config = config,
+            orders = orders,
+            tables = tables,
+            isForcedByAdmin = forceCustomerViewMode,
+            onToggleAdminView = { forceCustomerViewMode = false }
+        )
+        return
+    }
 
     val totalSales = orders.sumOf { it.totalAmount }
     val openOrdersCount = orders.count { it.status in listOf(OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY) }
@@ -152,11 +182,69 @@ fun DashboardScreen(viewModel: PosViewModel) {
         ) {
             // Hero Branding Banner (Full Width)
             item(span = { GridItemSpan(maxLineSpan) }) {
-                HeroBannerCard(
+                Column {
+                    HeroBannerCard(
+                        currentUser = currentUser,
+                        config = config,
+                        windowWidthSizeClass = windowWidthSizeClass,
+                        onOpenScanner = { viewModel.navigateTo("qrmenu") }
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Admin Quick Switcher to Customer Portal Preview
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF8C1D11).copy(alpha = 0.08f)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8C1D11).copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF8C1D11), modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "Admin View Mode Active",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF8C1D11)
+                                    )
+                                    Text(
+                                        text = "Switch view to test Customer Portal & Table Ordering experience",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Button(
+                                onClick = { forceCustomerViewMode = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8C1D11)),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.testTag("preview_customer_portal_btn")
+                            ) {
+                                Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Customer Dashboard", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Logged-in Admins & Customers Session Status Section (Full Width)
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                AdminActiveUsersSection(
                     currentUser = currentUser,
-                    config = config,
-                    windowWidthSizeClass = windowWidthSizeClass,
-                    onOpenScanner = { viewModel.navigateTo("qrmenu") }
+                    serviceRequests = serviceRequests,
+                    onDismissRequest = { viewModel.dismissServiceRequest(it) }
                 )
             }
 

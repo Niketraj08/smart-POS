@@ -52,6 +52,53 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
     private val _loginError = MutableStateFlow<String?>(null)
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
 
+    // --- Table Service Requests (Customer -> Staff Alerts) ---
+    private val _serviceRequests = MutableStateFlow<List<com.example.domain.model.TableServiceRequest>>(
+        listOf(
+            com.example.domain.model.TableServiceRequest(
+                id = "sr-1",
+                tableNumber = "T-01",
+                customerName = "Niket Raj",
+                serviceType = "Water Refill"
+            )
+        )
+    )
+    val serviceRequests: StateFlow<List<com.example.domain.model.TableServiceRequest>> = _serviceRequests.asStateFlow()
+
+    fun sendTableServiceRequest(tableNumber: String, customerName: String, serviceType: String) {
+        val newReq = com.example.domain.model.TableServiceRequest(
+            tableNumber = tableNumber,
+            customerName = customerName,
+            serviceType = serviceType
+        )
+        _serviceRequests.value = _serviceRequests.value + newReq
+    }
+
+    fun dismissServiceRequest(requestId: String) {
+        _serviceRequests.value = _serviceRequests.value.filter { it.id != requestId }
+    }
+
+    fun loginAsCustomer(name: String, phone: String) {
+        val user = User(
+            id = "cust_${System.currentTimeMillis()}",
+            name = name,
+            role = UserRole.CUSTOMER,
+            pin = "7777",
+            email = "${name.lowercase().replace(" ", "")}@customer.com",
+            phone = phone
+        )
+        _currentUser.value = user
+        _loginError.value = null
+        _selectedCustomer.value = CustomerModel(
+            id = 101,
+            name = name,
+            phone = phone,
+            email = user.email,
+            loyaltyPoints = 240,
+            totalSpent = 1450.00
+        )
+    }
+
     fun loginWithPin(pin: String): Boolean {
         var success = false
         viewModelScope.launch {

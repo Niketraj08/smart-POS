@@ -102,21 +102,33 @@ fun SmartPosApp(viewModel: PosViewModel) {
         return
     }
 
-    val navItems = listOf(
-        NavItem("dashboard", "Dashboard", Icons.Default.Dashboard),
-        NavItem("orders", "Register", Icons.Default.PointOfSale),
-        NavItem("history", "Order History", Icons.Default.History),
-        NavItem("tables", "Tables", Icons.Default.TableBar),
-        NavItem("kds", "KDS", Icons.Default.Kitchen),
-        NavItem("billing", "Billing", Icons.Default.Receipt),
-        NavItem("menu", "Menu", Icons.Default.MenuBook),
-        NavItem("qrmenu", "QR Scanner", Icons.Default.QrCode),
-        NavItem("inventory", "Inventory", Icons.Default.Inventory),
-        NavItem("customers", "Customers", Icons.Default.People),
-        NavItem("employees", "Staff", Icons.Default.Badge),
-        NavItem("reports", "Reports", Icons.Default.Assessment),
-        NavItem("settings", "Settings", Icons.Default.Settings)
-    )
+    val isCustomerRole = currentUser?.role == UserRole.CUSTOMER
+
+    val navItems = if (isCustomerRole) {
+        listOf(
+            NavItem("dashboard", "My Dashboard", Icons.Default.Dashboard),
+            NavItem("orders", "Digital Menu", Icons.Default.PointOfSale),
+            NavItem("qrmenu", "Scan Table QR", Icons.Default.QrCode),
+            NavItem("history", "My Receipts", Icons.Default.History),
+            NavItem("customers", "Loyalty Points", Icons.Default.People)
+        )
+    } else {
+        listOf(
+            NavItem("dashboard", "Dashboard", Icons.Default.Dashboard),
+            NavItem("orders", "Register", Icons.Default.PointOfSale),
+            NavItem("history", "Order History", Icons.Default.History),
+            NavItem("tables", "Tables", Icons.Default.TableBar),
+            NavItem("kds", "KDS", Icons.Default.Kitchen),
+            NavItem("billing", "Billing", Icons.Default.Receipt),
+            NavItem("menu", "Menu", Icons.Default.MenuBook),
+            NavItem("qrmenu", "QR Scanner", Icons.Default.QrCode),
+            NavItem("inventory", "Inventory", Icons.Default.Inventory),
+            NavItem("customers", "Customers", Icons.Default.People),
+            NavItem("employees", "Staff", Icons.Default.Badge),
+            NavItem("reports", "Reports", Icons.Default.Assessment),
+            NavItem("settings", "Settings", Icons.Default.Settings)
+        )
+    }
 
     androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val isCompact = maxWidth < 720.dp
@@ -269,13 +281,23 @@ fun SmartPosApp(viewModel: PosViewModel) {
             },
             bottomBar = {
                 if (isCompact) {
-                    val bottomNavItems = listOf(
-                        NavItem("dashboard", "Dashboard", Icons.Default.Dashboard),
-                        NavItem("orders", "Orders", Icons.Default.PointOfSale),
-                        NavItem("history", "History", Icons.Default.History),
-                        NavItem("menu", "Menu", Icons.Default.MenuBook),
-                        NavItem("settings", "Settings", Icons.Default.Settings)
-                    )
+                    val bottomNavItems = if (isCustomerRole) {
+                        listOf(
+                            NavItem("dashboard", "Dashboard", Icons.Default.Dashboard),
+                            NavItem("orders", "Menu", Icons.Default.PointOfSale),
+                            NavItem("qrmenu", "Scan QR", Icons.Default.QrCode),
+                            NavItem("history", "Receipts", Icons.Default.History),
+                            NavItem("customers", "Loyalty", Icons.Default.People)
+                        )
+                    } else {
+                        listOf(
+                            NavItem("dashboard", "Dashboard", Icons.Default.Dashboard),
+                            NavItem("orders", "Orders", Icons.Default.PointOfSale),
+                            NavItem("history", "History", Icons.Default.History),
+                            NavItem("menu", "Menu", Icons.Default.MenuBook),
+                            NavItem("settings", "Settings", Icons.Default.Settings)
+                        )
+                    }
                     NavigationBar(
                         containerColor = MaterialTheme.colorScheme.surface,
                         contentColor = MaterialTheme.colorScheme.primary,
