@@ -217,31 +217,49 @@ fun SmartPosApp(viewModel: PosViewModel) {
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(if (isCompact) 4.dp else 10.dp))
+                        Spacer(modifier = Modifier.width(if (isCompact) 4.dp else 8.dp))
 
-                        Box {
-                            Box(
+                        // User Profile & Avatar Chip
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f))
+                                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                                .clickable { showRoleDropdown = true }
+                                .padding(horizontal = if (isCompact) 6.dp else 10.dp, vertical = 4.dp)
+                                .testTag("user_profile_topbar_chip")
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.img_user_avatar),
+                                contentDescription = "User Avatar",
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(MaterialTheme.colorScheme.primaryContainer)
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                        RoundedCornerShape(20.dp)
-                                    )
-                                    .clickable { showRoleDropdown = true }
-                                    .padding(horizontal = if (isCompact) 8.dp else 14.dp, vertical = if (isCompact) 5.dp else 7.dp)
-                                    .testTag("role_switcher_chip"),
-                                contentAlignment = Alignment.Center
-                            ) {
+                                    .size(if (isCompact) 26.dp else 30.dp)
+                                    .clip(CircleShape)
+                                    .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            Column {
                                 Text(
-                                    text = if (isCompact) "${currentUser?.role?.displayName}" else "Role: ${currentUser?.role?.displayName}",
+                                    text = currentUser?.name ?: "Niket Raj",
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    fontSize = if (isCompact) 11.sp else 12.sp
+                                    fontSize = if (isCompact) 11.sp else 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = currentUser?.role?.displayName ?: "Manager",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
+                        }
 
+                        Box {
                             DropdownMenu(
                                 expanded = showRoleDropdown,
                                 onDismissRequest = { showRoleDropdown = false }

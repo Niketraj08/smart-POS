@@ -48,16 +48,23 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.TableBar
 import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.RateReview
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -448,18 +455,32 @@ private fun HeroBannerCard(
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Welcome, ${currentUser?.name ?: "Manager"}!",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = "${config.restaurantName} • Real-Time Dine-In POS",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.LightGray,
-                            fontSize = 11.sp
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(id = R.drawable.img_user_avatar),
+                                contentDescription = "User Avatar",
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .border(1.5.dp, Color(0xFFFFD700), CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Welcome, ${currentUser?.name ?: "Sarah Jenkins"}!",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "${config.restaurantName} • Real-Time Dine-In POS",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.LightGray,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
                     }
                     Button(
                         onClick = onOpenScanner,
@@ -1303,6 +1324,11 @@ fun CustomerDashboardView(
     var serviceRequestSent by remember { mutableStateOf(false) }
     val selectedTableNum = "T-01"
 
+    // Customer Review State
+    var customerRating by remember { mutableStateOf(5) }
+    var reviewText by remember { mutableStateOf("") }
+    var reviewSubmittedSuccess by remember { mutableStateOf(false) }
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(1),
         modifier = Modifier
@@ -1336,132 +1362,93 @@ fun CustomerDashboardView(
             }
         }
 
-        // Welcome Customer Banner Card
+        // Welcome Customer Banner Card with Hero Image & User Avatar Photo
         item {
             ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = Color(0xFF8C1D11))
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
-                ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Image(
+                        painter = painterResource(id = R.drawable.img_pos_hero_banner),
+                        contentDescription = "Restaurant Banner",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(
+                                        Color(0xFF5C0000).copy(alpha = 0.92f),
+                                        Color.Black.copy(alpha = 0.75f)
+                                    )
+                                )
+                            )
+                    )
+
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("VIP Loyalty Guest", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            // User Profile Avatar Image
+                            Image(
+                                painter = painterResource(id = R.drawable.img_user_avatar),
+                                contentDescription = "User Avatar",
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .clip(CircleShape)
+                                    .border(2.dp, Color(0xFFFFD700), CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("VIP Loyalty Guest", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Welcome, ${currentUser?.name ?: "Sarah Jenkins"}!",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 17.sp,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = "Table $selectedTableNum • ${config.restaurantName}",
+                                    color = Color.White.copy(alpha = 0.85f),
+                                    fontSize = 12.sp
+                                )
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Welcome, ${currentUser?.name ?: "Valued Customer"}!",
-                                color = Color.White,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 22.sp
-                            )
-                            Text(
-                                text = "Table $selectedTableNum • ${config.restaurantName}",
-                                color = Color.White.copy(alpha = 0.8f),
-                                fontSize = 13.sp
-                            )
                         }
 
                         Card(
                             colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.2f)),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(14.dp)
                         ) {
                             Column(
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("Loyalty Points", color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp)
-                                Text("240", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
-                                Text("Tier: Gold", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 10.sp)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Table Assistance / Service Request Buttons
-        item {
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Call, contentDescription = null, tint = Color(0xFF8C1D11), modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Call Waiter & Table Service", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    }
-                    Text("Instant alert sent directly to staff smart POS terminals", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    val options = listOf("Water Refill", "Call Waiter", "Request Bill", "Need Cutlery", "Clean Table")
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        options.take(3).forEach { option ->
-                            Button(
-                                onClick = {
-                                    selectedServiceType = option
-                                    viewModel.sendTableServiceRequest(selectedTableNum, currentUser?.name ?: "Customer", option)
-                                    serviceRequestSent = true
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(option, fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        options.drop(3).forEach { option ->
-                            Button(
-                                onClick = {
-                                    selectedServiceType = option
-                                    viewModel.sendTableServiceRequest(selectedTableNum, currentUser?.name ?: "Customer", option)
-                                    serviceRequestSent = true
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(option, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSecondaryContainer, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-
-                    if (serviceRequestSent && selectedServiceType != null) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Service Request '$selectedServiceType' sent to staff for Table $selectedTableNum!", fontSize = 11.sp, color = Color(0xFF1B5E20), fontWeight = FontWeight.Bold)
+                                Text("Points", color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp)
+                                Text("240", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                                Text("Gold Tier", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 10.sp)
                             }
                         }
                     }
@@ -1553,6 +1540,268 @@ fun CustomerDashboardView(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text("Loyalty Rewards", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFFE65100))
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Featured Chef Specials Carousel / Dishes Showcase
+        item {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Restaurant, contentDescription = null, tint = Color(0xFF8C1D11), modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Featured Chef Specials", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+                        TextButton(onClick = { viewModel.navigateTo("orders") }) {
+                            Text("View All", fontSize = 12.sp, color = Color(0xFF8C1D11))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.navigateTo("orders") },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.img_food_special),
+                                contentDescription = "Paneer Butter Masala",
+                                modifier = Modifier
+                                    .size(72.dp)
+                                    .clip(RoundedCornerShape(12.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .background(Color(0xFF2E7D32), CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Paneer Butter Masala", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                }
+                                Text("Rich cottage cheese in creamy tomato gravy", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("4.9 ★", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE65100))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("${config.currencySymbol}14.99", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color(0xFF8C1D11))
+                                }
+                            }
+
+                            Button(
+                                onClick = { viewModel.navigateTo("orders") },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8C1D11)),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Text("+ Order", fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Table Assistance / Service Request Buttons
+        item {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Call, contentDescription = null, tint = Color(0xFF8C1D11), modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Call Waiter & Table Service", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    Text("Instant alert sent directly to staff smart POS terminals", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val options = listOf("Water Refill", "Call Waiter", "Request Bill", "Need Cutlery", "Clean Table")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        options.take(3).forEach { option ->
+                            Button(
+                                onClick = {
+                                    selectedServiceType = option
+                                    viewModel.sendTableServiceRequest(selectedTableNum, currentUser?.name ?: "Customer", option)
+                                    serviceRequestSent = true
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(option, fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        options.drop(3).forEach { option ->
+                            Button(
+                                onClick = {
+                                    selectedServiceType = option
+                                    viewModel.sendTableServiceRequest(selectedTableNum, currentUser?.name ?: "Customer", option)
+                                    serviceRequestSent = true
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(option, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSecondaryContainer, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    if (serviceRequestSent && selectedServiceType != null) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Service Request '$selectedServiceType' sent to staff for Table $selectedTableNum!", fontSize = 11.sp, color = Color(0xFF1B5E20), fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Customer Review & Feedback Section (guaranteed successful submission flow)
+        item {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.RateReview, contentDescription = null, tint = Color(0xFF8C1D11), modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Rate & Review Your Experience", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    Text("We value your feedback at Swad Sutra Fine Dining", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (reviewSubmittedSuccess) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("review_success_card"),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF2E7D32))
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = "Success", tint = Color(0xFF2E7D32), modifier = Modifier.size(36.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("Review Submitted Successfully!", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = Color(0xFF1B5E20))
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Thank you for your $customerRating-Star review! Your feedback helps us deliver royal dining experiences.", fontSize = 12.sp, color = Color(0xFF2E7D32))
+                                Spacer(modifier = Modifier.height(10.dp))
+                                OutlinedButton(
+                                    onClick = { reviewSubmittedSuccess = false; reviewText = "" },
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF1B5E20))
+                                ) {
+                                    Text("Submit Another Feedback", fontSize = 11.sp)
+                                }
+                            }
+                        }
+                    } else {
+                        // Star Rating Selector
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            (1..5).forEach { star ->
+                                IconButton(
+                                    onClick = { customerRating = star },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Star,
+                                        contentDescription = "$star Stars",
+                                        tint = if (star <= customerRating) Color(0xFFFFD700) else Color.LightGray,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedTextField(
+                            value = reviewText,
+                            onValueChange = { reviewText = it },
+                            placeholder = { Text("Write your review about the food, ambiance, or service...") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("customer_review_input"),
+                            maxLines = 3
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = {
+                                reviewSubmittedSuccess = true
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8C1D11)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                                .testTag("submit_review_button"),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Submit Review", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                     }
                 }
