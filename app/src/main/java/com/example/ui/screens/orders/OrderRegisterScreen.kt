@@ -59,6 +59,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
@@ -785,24 +786,21 @@ private fun PosItemTile(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp)
             .testTag("pos_tile_${item.name}")
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Food Thumbnail Image
+            // Food Thumbnail Header Image
             Box(
                 modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .fillMaxWidth()
+                    .height(95.dp)
+                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 androidx.compose.foundation.Image(
@@ -815,53 +813,64 @@ private fun PosItemTile(
                 // Veg / Non-Veg Indicator Badge on top-left of image
                 Box(
                     modifier = Modifier
-                        .padding(4.dp)
-                        .size(14.dp)
-                        .clip(RoundedCornerShape(3.dp))
+                        .padding(6.dp)
+                        .size(16.dp)
+                        .clip(RoundedCornerShape(4.dp))
                         .background(Color.White)
-                        .border(1.dp, if (item.isVeg) Color(0xFF2E7D32) else Color(0xFFC62828), RoundedCornerShape(3.dp)),
+                        .border(1.dp, if (item.isVeg) Color(0xFF2E7D32) else Color(0xFFC62828), RoundedCornerShape(4.dp))
+                        .align(Alignment.TopStart),
                     contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(6.dp)
+                            .size(7.dp)
                             .background(if (item.isVeg) Color(0xFF2E7D32) else Color(0xFFC62828), CircleShape)
+                    )
+                }
+
+                // Rating Badge on top-right of image
+                Box(
+                    modifier = Modifier
+                        .padding(6.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.Black.copy(alpha = 0.65f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .align(Alignment.TopEnd)
+                ) {
+                    Text(
+                        text = "4.8 ★",
+                        color = Color(0xFFFFD700),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
-
             Column(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceBetween
+                    .fillMaxWidth()
+                    .padding(10.dp)
             ) {
-                Column {
-                    Text(
-                        text = item.name,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        maxLines = 2,
-                        lineHeight = 16.sp
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "4.8 ★",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFE65100)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = item.categoryName.ifBlank { "Special" },
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                Text(
+                    text = item.name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                Text(
+                    text = item.categoryName.ifBlank { "Special" },
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -871,18 +880,33 @@ private fun PosItemTile(
                     Text(
                         text = "$currencySymbol${String.format("%.2f", item.price)}",
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 15.sp,
-                        color = Color(0xFF8C1D11)
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.primary
                     )
 
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF8C1D11))
+                            .background(MaterialTheme.colorScheme.primary)
                             .clickable { onClick() }
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("+ Add", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = "Add",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            )
+                        }
                     }
                 }
             }
